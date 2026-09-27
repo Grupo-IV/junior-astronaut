@@ -1,5 +1,7 @@
-// Mission analysis: turns the mission record into an explanation —
-// what happened, why, which decisions contributed, and what could change.
+/**
+ * @file
+ * @brief Converts mission records into educational explanations and alternatives.
+ */
 import type { DecisionRecord, GameContent, Lesson, MissionState } from '../../types/game'
 import { getMission } from '../content'
 import { batteryCapacityKwh } from '../buildings/buildings'

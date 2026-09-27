@@ -1,4 +1,7 @@
-// Public API of the simulation engine. The UI and the 3D layer import from here.
+/**
+ * @file
+ * @brief Public API of the simulation engine.
+ */
 export { gameContent, getMission } from './content'
 export { createMissionState } from './missions/createMission'
 export { illuminationFor, illuminationPeriod } from './missions/illumination'

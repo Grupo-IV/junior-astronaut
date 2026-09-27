@@ -1,6 +1,7 @@
-// Launch loadout: what the lander carries. Mass and storage volume are the
-// first trade-off of the mission — every kilogram spent on one system is not
-// available for another.
+/**
+ * @file
+ * @brief Calculates launch mass, storage and consumable supply constraints.
+ */
 import type {
   BuildingId,
   CargoId,

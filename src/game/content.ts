@@ -1,5 +1,7 @@
-// Loads the JSON configuration into typed game content.
-// All tunable numbers live in src/data — the engine only reads them from here.
+/**
+ * @file
+ * @brief Loads the typed game content used by the simulation engine.
+ */
 import moon from '../data/moon.json'
 import buildingsData from '../data/buildings.json'
 import eventsData from '../data/events.json'

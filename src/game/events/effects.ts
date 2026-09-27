@@ -1,4 +1,7 @@
-// Applies declarative effects (defined in events.json) to a draft MissionState.
+/**
+ * @file
+ * @brief Applies declarative event effects to mission state.
+ */
 import type { BuildingInstance, Effect, GameContent, MissionState, PendingEvent } from '../../types/game'
 import { getMission } from '../content'
 import { pick, random } from '../simulation/rng'
@@ -54,7 +57,6 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
       case 'failBuilding': {
         let candidates: BuildingInstance[]
         if (effect.target === 'random-active') {
-          // Passive hardware (batteries, the regolith shelter) is not vulnerable to single-event upsets.
           candidates = state.buildings.filter(
             (b) => b.status === 'ok' && b.enabled && b.defId !== 'battery' && b.defId !== 'radiation_shelter',
           )

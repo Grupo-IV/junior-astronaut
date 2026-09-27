@@ -1,6 +1,7 @@
-// Domain types for the Junior Astronaut Mission Trainer.
-// These types are shared by the simulation engine (src/game), the React UI
-// (src/components) and the Three.js layer (src/three). They contain no logic.
+/**
+ * @file
+ * @brief Shared domain types for simulation, React and Three.js.
+ */
 
 /** Stored consumables. Units: kg for mass, kWh for energy. */
 export type StockId = 'water' | 'oxygen' | 'food' | 'energy'
@@ -23,7 +24,6 @@ export type Loadout = Record<LoadoutItemId, number>
 
 export interface ScienceNote {
   text: string
-  /** Key into science.json `sources`. */
   source: string
 }
 
@@ -33,27 +33,18 @@ export interface BuildingDef {
   icon: string
   massKg: number
   maxCount: number
-  /** kWh consumed per day while running. */
   powerDemandKwhPerDay: number
-  /** Lower value = shed first when power is short. */
   shedPriority: number
-  /** Solar arrays: kWh/day produced at full illumination. */
   powerOutputKwhPerDay?: number
-  /** Batteries: storable energy. */
   storageKwh?: number
-  /** Water recycler: fraction of crew water use recovered. */
   waterRecoveryRate?: number
-  /** Oxygen generator: max O2 kg/day and water needed per kg O2. */
   oxygenOutputKgPerDay?: number
   waterPerKgOxygen?: number
-  /** Oxygen generator throttles to keep this many days of crew O2 stored. */
   oxygenSetpointDays?: number
-  /** Greenhouse. */
   growthDays?: number
   foodOutputKgPerDay?: number
   oxygenBonusKgPerDay?: number
   waterUseKgPerDay?: number
-  /** Radiation shelter: fraction of storm dose that still reaches the crew. */
   stormDoseFactor?: number
   summary: string
   benefit: string
@@ -65,11 +56,9 @@ export interface CargoDef {
   id: CargoId
   name: string
   icon: string
-  /** Total launched mass per unit, including container. */
   massKg: number
   maxCount: number
   stock?: Exclude<StockId, 'energy'>
-  /** Useful content per unit (kg of water/oxygen/food). */
   contentKg?: number
   summary: string
   science: ScienceNote
@@ -102,7 +91,6 @@ export interface MissionDef {
   scheduledEvents: ScheduledEvent[]
   randomEventChancePerDay: number
   randomEventPool: string[]
-  /** Random events never trigger before this day, nor within `minDaysBetweenEvents` of another. */
   firstRandomEventDay: number
   minDaysBetweenEvents: number
   recommendedLoadout: Partial<Loadout>
@@ -130,9 +118,6 @@ export interface EnvironmentDef {
   foodGraceDays: number
   powerCrisisGraceDays: number
 }
-
-// ---------------------------------------------------------------------------
-// Events & decisions
 
 export type ModifierKind =
   | 'storm_dose' // mSv/day reaching the crew inside the habitat
@@ -173,7 +158,6 @@ export interface DecisionOption {
   cost: string
   requires?: OptionRequirement
   effects: Effect[]
-  /** Resources this option puts at risk — used by the mission analysis. */
   risks: RiskTag[]
   lesson: string
 }
@@ -203,20 +187,14 @@ export interface EventDef {
   options: DecisionOption[]
 }
 
-// ---------------------------------------------------------------------------
-// Runtime state
-
 export type BuildingStatus = 'ok' | 'failed'
 
 export interface BuildingInstance {
   uid: string
   defId: BuildingId
-  /** Player switch. */
   enabled: boolean
   status: BuildingStatus
-  /** Result of the last day's power allocation. */
   powered: boolean
-  /** Greenhouse only: days of growth accumulated. */
   growth: number
 }
 
@@ -242,7 +220,6 @@ export interface PendingEvent {
   eventId: string
   variant?: string
   day: number
-  /** uid of the building an event acted on (e.g. equipment failure). */
   targetUid?: string
 }
 
@@ -285,7 +262,6 @@ export interface MissionStats {
   doseBackground: number
   doseStorm: number
   doseEva: number
-  /** Storm dose that shielding prevented. */
   doseBlocked: number
   daysWithShedding: number
   energyWastedKwh: number

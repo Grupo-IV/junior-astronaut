@@ -1,4 +1,8 @@
-// Event triggering and player decisions.
+/**
+ * @brief Resolves the selected decision and resumes the mission.
+ * @file
+ * @brief Triggers mission events and resolves player decisions.
+ */
 import type {
   DecisionOption,
   EventDef,
@@ -85,7 +89,6 @@ export function rollEvents(content: GameContent, state: MissionState) {
   const mission = getMission(content, state.missionId)
   const nextDay = state.day + 1
 
-  // Space-weather forecast: warn two days ahead so the player can prepare.
   for (const e of mission.scheduledEvents) {
     if (e.eventId === 'solar_storm' && e.day === nextDay + 1) {
       state.log.push({
@@ -116,7 +119,7 @@ export function rollEvents(content: GameContent, state: MissionState) {
   if (chosen) triggerEvent(content, state, chosen, nextDay)
 }
 
-/** Applies the chosen option and resumes the mission. Returns a new state. */
+/** @brief Applies the chosen option and resumes the mission. */
 export function resolveDecision(content: GameContent, state: MissionState, optionId: string): MissionState {
   if (state.status !== 'awaiting-decision' || !state.pendingEvent) return state
   const def = eventDef(content, state.pendingEvent.eventId)

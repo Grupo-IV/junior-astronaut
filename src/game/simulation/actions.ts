@@ -1,4 +1,7 @@
-// Player actions available during daily operations (outside of events).
+/**
+ * @file
+ * @brief Applies player actions during daily operations.
+ */
 import type { GameContent, MissionState } from '../../types/game'
 import { random } from './rng'
 
@@ -30,7 +33,7 @@ export function canRepair(state: MissionState, uid: string): { possible: boolean
   return { possible: true, withSpare: false }
 }
 
-/** Repair with a spare kit (always works) or improvise (50%, once per day). */
+/** @brief Repairs a failed building using a spare kit or improvisation. */
 export function repairBuilding(content: GameContent, state: MissionState, uid: string): MissionState {
   const check = canRepair(state, uid)
   if (!check.possible) return state

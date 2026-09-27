@@ -1,8 +1,7 @@
-// The simulation tick: one call = one Earth day at the outpost.
-//
-//   power allocation → life support flows → radiation → failure rules → events
-//
-// Pure with respect to its input: returns a new MissionState.
+/**
+ * @file
+ * @brief Advances the mission by one Earth day.
+ */
 import type {
   BuildingId,
   BuildingInstance,
@@ -19,7 +18,6 @@ import { crewNeeds, SUPPLY_STOCKS } from '../resources/loadout'
 import { checkFailure } from '../rules/failure'
 
 export interface TickOptions {
-  /** Disable events — used for projections of a "calm" mission. */
   events?: boolean
 }
 
@@ -48,7 +46,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
   const period = illuminationPeriod(mission, day)
   if (period.fromDay === day && day > 1) log('science', `☀️ ${period.label} — solar input at ${Math.round(period.factor * 100)}%.`)
 
-  // ---------------------------------------------------------------- POWER
   const illumination = illuminationFor(mission, day)
   const solarFactor = product(s, 'solar_output')
   const running = s.buildings.filter((b) => wantsToRun(s, b))
@@ -57,7 +54,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     .reduce((acc, b) => acc + (defs[b.defId].powerOutputKwhPerDay ?? 0) * illumination * solarFactor, 0)
 
   const criticalDemand = env.habitat.powerDemandKwhPerDay + sum(s, 'extra_power')
-  // Consumers sorted so the least important is shed first.
   const consumers = running
     .filter((b) => defs[b.defId].powerDemandKwhPerDay > 0)
     .sort((a, b) => defs[b.defId].shedPriority - defs[a.defId].shedPriority)
@@ -87,7 +83,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
   }
   if (habitatUnpowered) log('danger', '⚡ POWER EMERGENCY: batteries empty, habitat life support is failing!')
 
-  // ------------------------------------------------------- LIFE SUPPORT
   const needs = crewNeeds(content, mission)
   const flows: DayReport['flows'] = {
     oxygen: { produced: 0, consumed: needs.oxygen },
@@ -119,7 +114,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     }
   }
 
-  // Oxygen generator runs last and throttles to its setpoint so it doesn't burn water needlessly.
   for (const b of s.buildings.filter((x) => isOn(x) && x.defId === 'oxygen_generator')) {
     const def = defs[b.defId]
     const waterPerKg = def.waterPerKgOxygen ?? 1
@@ -150,7 +144,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     log('warning', `💦 Leak: lost ${lost.toFixed(1)} kg of water today.`)
   }
 
-  // ----------------------------------------------------------- RADIATION
   const background = env.gcrDoseMsvPerDay * env.habitatGcrFactor
   const storm = sum(s, 'storm_dose')
   const stormReceived = storm * product(s, 'dose_factor')
@@ -173,7 +166,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     log('danger', `☢️ Crew dose passed ${env.doseWarningMsv} mSv — getting close to the ${env.doseLimitMsv} mSv limit!`)
   }
 
-  // ------------------------------------------------------------- RECORDS
   s.lastReport = {
     day,
     illumination: illumination * solarFactor,
@@ -201,7 +193,6 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
   for (const m of s.modifiers) m.remainingDays -= 1
   s.modifiers = s.modifiers.filter((m) => m.remainingDays > 0)
 
-  // --------------------------------------------------------------- RULES
   const failure = checkFailure(content, s, raw, habitatUnpowered)
   if (failure) {
     s.status = 'failure'

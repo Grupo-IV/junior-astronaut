@@ -1,6 +1,7 @@
-// Mission planning projection: runs the real engine on a "calm" mission
-// (no storms, no failures) so the setup screen can show exactly what the
-// chosen loadout does — not a separate, approximate formula.
+/**
+ * @file
+ * @brief Projects loadout performance by running the simulation without events.
+ */
 import type { FailureCause, GameContent, Loadout } from '../../types/game'
 import { getMission } from '../content'
 import { batteryCapacityKwh } from '../buildings/buildings'
@@ -11,7 +12,6 @@ import { advanceDay } from './tick'
 export interface LoadoutProjection {
   survivesCalmMission: boolean
   failure: { cause: FailureCause; day: number } | null
-  /** Day each supply first runs out in a calm mission (null = never). */
   runsOutDay: Record<SupplyStock, number | null>
   lowestEnergyKwh: number
   batteryCapacityKwh: number

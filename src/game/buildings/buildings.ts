@@ -1,4 +1,7 @@
-// Queries about the base's infrastructure.
+/**
+ * @file
+ * @brief Queries and state transitions for base infrastructure.
+ */
 import type { BuildingDef, BuildingId, BuildingInstance, GameContent, MissionState, Modifier } from '../../types/game'
 
 export function buildingDef(content: GameContent, id: BuildingId): BuildingDef {

@@ -1,6 +1,7 @@
-// Headless balancing: plays each mission hundreds of times with scripted
-// strategies and checks the outcome distribution. Run with `npm run balance`.
-// The simulation runs without React or Three.js — proof that the simulation is the game.
+/**
+ * @file
+ * @brief Exercises mission balance with deterministic scripted playthroughs.
+ */
 import { describe, expect, it } from 'vitest'
 import type { Loadout, MissionState } from '../../types/game'
 import {
@@ -17,7 +18,7 @@ import {
 
 type Policy = ((s: MissionState) => string) & { repairs?: boolean }
 
-/** Picks the first available option in a preference list per event. */
+/** @brief Selects the first available option in the configured preference order. */
 function prefer(order: Record<string, string[]>): Policy {
   return (s) => {
     const def = content.events[s.pendingEvent!.eventId]

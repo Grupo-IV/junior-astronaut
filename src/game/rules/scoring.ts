@@ -1,4 +1,7 @@
-// Mission rating: success is binary, stars reward *how well* the crew was kept safe.
+/**
+ * @file
+ * @brief Calculates the mission rating from survival and resource performance.
+ */
 import type { GameContent, MissionState } from '../../types/game'
 import { getMission } from '../content'
 import { crewNeeds, SUPPLY_STOCKS } from '../resources/loadout'
@@ -13,7 +16,6 @@ export interface MissionScore {
   success: boolean
   stars: number
   badges: Badge[]
-  /** Lowest number of days of supply held at the end of any day. */
   worstReserveDays: number
 }
 

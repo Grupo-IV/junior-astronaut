@@ -1,4 +1,8 @@
-// Mission rules: when does the crew's situation become unsurvivable?
+/**
+ * @brief Evaluates whether the mission has reached a terminal state.
+ * @file
+ * @brief Evaluates mission failure and success conditions.
+ */
 import type { FailureCause, GameContent, MissionState } from '../../types/game'
 
 /**

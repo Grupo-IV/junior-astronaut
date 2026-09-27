@@ -53,7 +53,6 @@ describe('life support flows', () => {
 
 describe('power', () => {
   it('sheds the greenhouse first when power is short', () => {
-    // One array in terrain shadow (day 8+) cannot run everything.
     const s0 = createMissionState(content, CADET, toLoadout({ solar_array: 1, greenhouse: 1, water_recycler: 1, oxygen_tank: 5, water_crate: 3, food_crate: 3 }), 1)
     const s = runCalm(s0, 9)
     expect(s.lastReport!.shed[0]).toBe('greenhouse')
