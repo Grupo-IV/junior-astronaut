@@ -1,0 +1,116 @@
+{
+  "environment": {
+    "name": "Moon",
+    "gcrDoseMsvPerDay": 1.37,
+    "habitatGcrFactor": 0.7,
+    "evaDoseMsv": 0.5,
+    "doseLimitMsv": 250,
+    "doseWarningMsv": 150,
+    "crewPerPersonPerDay": { "oxygenKg": 0.84, "waterKg": 3.5, "foodKg": 1.8 },
+    "habitat": { "powerDemandKwhPerDay": 45, "internalBatteryKwh": 20 },
+    "foodGraceDays": 3,
+    "powerCrisisGraceDays": 2
+  },
+  "missions": [
+    {
+      "id": "shackleton-first-light",
+      "name": "First Light at Shackleton",
+      "location": "Rim of Shackleton crater, lunar south pole",
+      "difficulty": "Cadet",
+      "crew": 4,
+      "durationDays": 12,
+      "launchMassBudgetKg": 3600,
+      "initialStocks": { "water": 30, "oxygen": 10, "food": 15 },
+      "storageCapacity": { "water": 400, "oxygen": 100, "food": 200 },
+      "illumination": [
+        { "fromDay": 1, "toDay": 6, "factor": 1.0, "label": "Full sunlight on the crater rim" },
+        { "fromDay": 7, "toDay": 7, "factor": 0.7, "label": "Sun grazing the horizon" },
+        { "fromDay": 8, "toDay": 10, "factor": 0.15, "label": "Terrain shadow" },
+        { "fromDay": 11, "toDay": 12, "factor": 0.9, "label": "Sunlight returns" }
+      ],
+      "scheduledEvents": [{ "day": 5, "eventId": "solar_storm", "variant": "moderate" }],
+      "randomEventChancePerDay": 0.15,
+      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "firstRandomEventDay": 3,
+      "minDaysBetweenEvents": 2,
+      "recommendedLoadout": {
+        "solar_array": 2,
+        "battery": 2,
+        "radiation_shelter": 1,
+        "water_crate": 2,
+        "oxygen_tank": 3,
+        "food_crate": 3,
+        "spare_parts": 1
+      },
+      "briefing": {
+        "tagline": "Your first command: keep a crew of 4 alive for 12 days at the lunar south pole.",
+        "story": "The lander touched down on the sunlit rim of Shackleton crater. Near the pole the Sun never climbs high: it circles the horizon, so solar panels get light for long stretches — until a hill or crater rim casts a shadow over the base. Everything your crew needs to survive came with you on the lander, and the lander could only carry so much.",
+        "objectives": [
+          "Keep oxygen, water and food above zero for 12 days",
+          "Keep the base powered — life support cannot switch off",
+          "Keep the crew's radiation dose below 250 mSv"
+        ],
+        "hazards": [
+          "A solar storm is forecast for day 5",
+          "Days 8–10: the base falls into terrain shadow — very little solar power",
+          "Random equipment failures, dust and leaks"
+        ],
+        "tip": "Every kilogram counts. Batteries carry you through the shadow; a shelter protects you from the storm — can you afford both?"
+      }
+    },
+    {
+      "id": "artemis-base-camp",
+      "name": "Artemis Base Camp",
+      "location": "Connecting ridge between Shackleton and de Gerlache craters",
+      "difficulty": "Commander",
+      "crew": 4,
+      "durationDays": 28,
+      "launchMassBudgetKg": 6000,
+      "initialStocks": { "water": 30, "oxygen": 10, "food": 15 },
+      "storageCapacity": { "water": 300, "oxygen": 80, "food": 180 },
+      "illumination": [
+        { "fromDay": 1, "toDay": 5, "factor": 1.0, "label": "Full sunlight on the ridge" },
+        { "fromDay": 6, "toDay": 8, "factor": 0.2, "label": "Terrain shadow" },
+        { "fromDay": 9, "toDay": 15, "factor": 1.0, "label": "Full sunlight on the ridge" },
+        { "fromDay": 16, "toDay": 16, "factor": 0.6, "label": "Sun sinking behind the crater rim" },
+        { "fromDay": 17, "toDay": 19, "factor": 0.1, "label": "Deep terrain shadow" },
+        { "fromDay": 20, "toDay": 28, "factor": 0.95, "label": "Sunlight returns" }
+      ],
+      "scheduledEvents": [
+        { "day": 10, "eventId": "solar_storm", "variant": "moderate" },
+        { "day": 22, "eventId": "solar_storm", "variant": "severe" }
+      ],
+      "randomEventChancePerDay": 0.18,
+      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "firstRandomEventDay": 3,
+      "minDaysBetweenEvents": 2,
+      "recommendedLoadout": {
+        "solar_array": 3,
+        "battery": 3,
+        "water_recycler": 1,
+        "oxygen_generator": 1,
+        "greenhouse": 1,
+        "radiation_shelter": 1,
+        "water_crate": 2,
+        "oxygen_tank": 1,
+        "food_crate": 4,
+        "spare_parts": 2
+      },
+      "briefing": {
+        "tagline": "28 days. Not enough room on the lander to bring everything — you will have to make it.",
+        "story": "This is a longer stay. The habitat's storage room can't hold four weeks of water, oxygen and food. To last, the base has to recycle water, split water into oxygen and grow some of its own food — and every one of those machines needs power, even when the Sun disappears behind the crater rim.",
+        "objectives": [
+          "Survive 28 days with a crew of 4",
+          "Close the loop: recycle and produce what storage can't hold",
+          "Keep the crew's radiation dose below 250 mSv"
+        ],
+        "hazards": [
+          "Two solar storms: day 10 (moderate) and day 22 (severe)",
+          "Two shadow periods — the second one is very dark",
+          "Random equipment failures, dust, leaks and crop disease"
+        ],
+        "tip": "Storage limits mean open-loop supplies alone won't last. Check the projected days of autonomy before you launch."
+      }
+    }
+  ]
+}
