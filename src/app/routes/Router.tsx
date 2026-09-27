@@ -1,4 +1,7 @@
-// Screen routing. Navigation is app state only — it never touches mission rules.
+/**
+ * @file
+ * @brief Maps application state to the active mission screen.
+ */
 import { useApp } from '../state/AppContext'
 import { MainMenu } from '../../components/menu/MainMenu'
 import { MissionSelect } from '../../components/menu/MissionSelect'

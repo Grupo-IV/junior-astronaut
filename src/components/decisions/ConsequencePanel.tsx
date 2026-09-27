@@ -1,4 +1,7 @@
-// CONSEQUENCE → LEARN. Shown right after a decision.
+/**
+ * @file
+ * @brief Explains the consequence of the selected mission decision.
+ */
 import { useEffect, useRef } from 'react'
 import { useApp } from '../../app/state/AppContext'
 import { eventDef, gameContent } from '../../game'

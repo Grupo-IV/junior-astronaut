@@ -1,4 +1,7 @@
-// Infrastructure management: see each structure's status, switch it on/off, repair it.
+/**
+ * @file
+ * @brief Displays infrastructure status and maintenance actions.
+ */
 import { useApp } from '../../app/state/AppContext'
 import { canRepair, gameContent, isGreenhouseProductive, wantsToRun } from '../../game'
 import type { BuildingInstance, MissionState } from '../../types/game'

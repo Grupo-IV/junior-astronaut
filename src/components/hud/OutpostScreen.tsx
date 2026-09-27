@@ -1,5 +1,7 @@
-// OPERATE: the moon outpost — 3D view plus HUD. Time advances one day per
-// step (manually or on auto-play) and pauses automatically for decisions.
+/**
+ * @file
+ * @brief Renders the lunar outpost view and daily operations HUD.
+ */
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../app/state/AppContext'
 import { gameContent, getMission, illuminationPeriod } from '../../game'
@@ -11,7 +13,6 @@ import { Button, fmt } from '../ui/ui'
 import { MissionLog } from './MissionLog'
 import { SystemsPanel } from './SystemsPanel'
 
-// Three.js is loaded only when the outpost opens, so menus load instantly.
 const MoonViewport = lazy(() => import('./MoonViewport').then((m) => ({ default: m.MoonViewport })))
 
 const SPEEDS = [
@@ -55,7 +56,6 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
       </div>
 
       <div className="flex flex-col gap-3 p-3 lg:pointer-events-none lg:absolute lg:inset-0 lg:grid lg:grid-cols-[300px_1fr_320px] lg:grid-rows-[auto_1fr_auto]">
-        {/* Top bar */}
         <header className="pointer-events-auto order-first flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel/90 px-4 py-2 backdrop-blur lg:col-span-3">
           <div className="mr-auto">
             <p className="font-display text-lg leading-tight font-bold">{def.name}</p>

@@ -1,5 +1,7 @@
-// React ↔ Three.js bridge. Mounts the OutpostScene once and pushes a new
-// SceneModel whenever the mission state changes.
+/**
+ * @file
+ * @brief Bridges React mission state to the Three.js outpost scene.
+ */
 import { useEffect, useRef, useState } from 'react'
 import { gameContent } from '../../game'
 import { OutpostScene } from '../../three/scene/OutpostScene'

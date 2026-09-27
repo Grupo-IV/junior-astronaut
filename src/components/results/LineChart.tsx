@@ -1,5 +1,7 @@
-// Minimal accessible SVG line chart: one y-axis, 2px lines, legend + end
-// labels for multi-series, crosshair tooltip on hover/focus, and a table view.
+/**
+ * @file
+ * @brief Accessible SVG line chart with a tabular representation.
+ */
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 export interface Series {

@@ -1,6 +1,7 @@
-// Application (navigation) state. Kept separate from the simulation engine:
-// this reducer only decides *which screen* is shown and forwards player
-// actions to pure engine functions.
+/**
+ * @file
+ * @brief Application navigation state and actions forwarded to the simulation engine.
+ */
 import type { Loadout, MissionState } from '../../types/game'
 import {
   advanceDay,
@@ -21,7 +22,6 @@ export interface AppState {
   missionId: string
   loadout: Loadout
   mission: MissionState | null
-  /** Index into mission.decisions of a decision whose consequences are being shown. */
   consequenceIndex: number | null
 }
 

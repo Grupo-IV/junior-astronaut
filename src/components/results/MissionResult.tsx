@@ -1,5 +1,7 @@
-// MISSION RESULT + MISSION ANALYSIS: what happened, why, which decisions
-// contributed, the engineering principle, and what to try next.
+/**
+ * @file
+ * @brief Displays the mission outcome and the educational mission analysis.
+ */
 import { useApp } from '../../app/state/AppContext'
 import { analyzeMission, crewNeeds, gameContent, getMission, scoreMission, stateBatteryCapacity, SUPPLY_STOCKS } from '../../game'
 import type { MissionState } from '../../types/game'

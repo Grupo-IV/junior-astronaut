@@ -1,4 +1,7 @@
-// Small reusable UI building blocks.
+/**
+ * @file
+ * @brief Reusable presentation primitives for the mission interface.
+ */
 import type { ComponentProps, ReactNode } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'

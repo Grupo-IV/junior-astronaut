@@ -1,5 +1,7 @@
-// EVENT → DECIDE. Explains the event (WHAT / WHY / ENGINEERING PRINCIPLE)
-// and presents options with explicit benefits and costs.
+/**
+ * @file
+ * @brief Presents event context and the available player decisions.
+ */
 import { useEffect, useRef } from 'react'
 import { useApp } from '../../app/state/AppContext'
 import { eventDef, gameContent } from '../../game'

@@ -1,5 +1,7 @@
-// PLAN / BUILD: choose what the lander carries. Every change re-runs the
-// simulation engine on a calm mission to forecast what the loadout can do.
+/**
+ * @file
+ * @brief Configures the lander loadout before a mission starts.
+ */
 import { useMemo } from 'react'
 import { useApp } from '../../app/state/AppContext'
 import {
