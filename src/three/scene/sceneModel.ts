@@ -1,5 +1,7 @@
-// What the 3D scene needs to know, derived from the simulation state.
-// The scene never reads MissionState directly — it only draws this model.
+/**
+ * @file
+ * @brief Defines the render-only model consumed by the Three.js scene.
+ */
 import type { BuildingId, GameContent, MissionState } from '../../types/game'
 import { isGreenhouseProductive, stateBatteryCapacity } from '../../game'
 
@@ -9,19 +11,16 @@ export interface SceneBuilding {
   uid: string
   defId: BuildingId
   status: VisualStatus
-  /** 0–1: greenhouse growth progress. */
   growth: number
 }
 
 export interface SceneModel {
   buildings: SceneBuilding[]
-  /** 0–1 effective sunlight. */
   illumination: number
   stormActive: boolean
   habitatUnpowered: boolean
   selectedUid: string | null
   day: number
-  /** 0–1 battery charge. */
   batteryFraction: number
 }
 

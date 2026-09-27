@@ -1,4 +1,7 @@
-// The main habitat module (always present) — a horizontal pressurised cylinder.
+/**
+ * @file
+ * @brief Creates the always-present pressurised habitat model.
+ */
 import * as THREE from 'three'
 
 export function createHabitat(): { group: THREE.Group; setPowered: (on: boolean) => void } {

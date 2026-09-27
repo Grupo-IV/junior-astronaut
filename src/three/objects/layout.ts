@@ -1,4 +1,7 @@
-// Where each structure stands on the landing zone.
+/**
+ * @file
+ * @brief Defines the positions of structures in the landing zone.
+ */
 import type { BuildingId } from '../../types/game'
 
 const SLOTS: Record<BuildingId, [number, number][]> = {

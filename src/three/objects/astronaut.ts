@@ -1,4 +1,7 @@
-// A small astronaut who walks between the habitat and the base's structures.
+/**
+ * @file
+ * @brief Creates and updates the outpost astronaut model.
+ */
 import * as THREE from 'three'
 
 export class Astronaut {
@@ -31,7 +34,6 @@ export class Astronaut {
     this.targets = [new THREE.Vector3(0, 0, 4.5), ...points]
   }
 
-  /** During a storm or a power emergency the crew stays inside. */
   setIndoors(indoors: boolean) {
     this.group.visible = !indoors
   }
@@ -51,7 +53,6 @@ export class Astronaut {
       }
       return
     }
-    // Lunar "bunny hop": low gravity makes astronauts bounce.
     const speed = 1.6
     toTarget.normalize()
     pos.addScaledVector(toTarget, Math.min(dist, speed * dt))

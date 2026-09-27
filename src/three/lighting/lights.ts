@@ -1,5 +1,7 @@
-// Lighting rig. Near the lunar poles the Sun circles just above the horizon,
-// so light is low, harsh and casts long shadows.
+/**
+ * @file
+ * @brief Creates the low-angle lunar lighting rig and ambient fill light.
+ */
 import * as THREE from 'three'
 
 export class LightingRig {
@@ -22,13 +24,12 @@ export class LightingRig {
     cam.near = 1
     cam.far = 200
     this.sun.shadow.bias = -0.0005
-    // Earthshine + scattered light from the regolith.
     this.ambient = new THREE.HemisphereLight(0x8fa8d8, 0x3a3833, 0.35)
     scene.add(this.sun, this.sun.target, this.ambient)
     this.place()
   }
 
-  /** `day` rotates the Sun around the horizon (~12° per Earth day). */
+  /** @brief Updates the solar direction for a mission day. */
   setConditions(illumination: number, day: number, storm: boolean) {
     this.azimuth = 0.6 + day * ((2 * Math.PI) / 29.5)
     this.targetIntensity = 0.15 + 2.9 * illumination

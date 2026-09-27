@@ -1,4 +1,7 @@
-// Click-to-select structures. A click is a pointer press that didn't turn into a camera drag.
+/**
+ * @file
+ * @brief Handles pointer picking of structures in the outpost scene.
+ */
 import * as THREE from 'three'
 
 export function attachPicking(

@@ -1,10 +1,12 @@
-// Black sky, stars and the Earth low on the horizon — as seen from the lunar south pole.
+/**
+ * @file
+ * @brief Creates the lunar sky, stars and low-horizon Earth.
+ */
 import * as THREE from 'three'
 
 export function createStars(count = 1800): THREE.Points {
   const positions = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
-    // Uniform points on the upper part of a sphere.
     const u = Math.random() * 2 - 1
     const theta = Math.random() * Math.PI * 2
     const y = Math.abs(u) * 0.95 + 0.05
@@ -28,7 +30,6 @@ export function createEarth(): THREE.Group {
     new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, roughness: 1 }),
   )
   group.add(earth, clouds)
-  // From the south pole the Earth hangs just above the horizon.
   group.position.set(-220, 38, -300)
   return group
 }

@@ -1,4 +1,7 @@
-// Solar-storm visual: streaks of energetic particles raining in from the Sun.
+/**
+ * @file
+ * @brief Creates the solar storm particle effect.
+ */
 import * as THREE from 'three'
 
 export class StormParticles {

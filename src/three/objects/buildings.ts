@@ -1,5 +1,7 @@
-// Simple, readable structures built from primitives. Each visual shows its
-// status with a beacon (colour AND blink pattern, so it doesn't rely on colour alone).
+/**
+ * @file
+ * @brief Creates readable primitive building models and their status beacons.
+ */
 import * as THREE from 'three'
 import type { BuildingId } from '../../types/game'
 import type { SceneBuilding, VisualStatus } from '../scene/sceneModel'
@@ -161,7 +163,6 @@ export class BuildingVisual {
   }
 
   update(t: number, sunDirection: THREE.Vector3) {
-    // Blink patterns: failed = fast blink, unpowered = slow pulse.
     if (this.status === 'failed') this.beacon.visible = Math.floor(t * 4) % 2 === 0
     else if (this.status === 'unpowered') {
       this.beacon.visible = true

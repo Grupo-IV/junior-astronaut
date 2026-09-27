@@ -1,5 +1,7 @@
-// Procedural lunar terrain: a gently rolling plain with a few craters.
-// The centre is flattened where the outpost stands.
+/**
+ * @file
+ * @brief Creates the procedural lunar terrain and landing zone.
+ */
 import * as THREE from 'three'
 
 interface Crater {
@@ -33,7 +35,6 @@ export function terrainHeight(x: number, z: number): number {
     Math.sin(x * 0.13 + 1.3) * Math.sin(z * 0.11 + 0.7) * 0.5 +
     Math.sin(x * 0.31 + z * 0.27) * 0.15
   for (const c of CRATERS) h += craterHeight(Math.hypot(x - c.x, z - c.z), c)
-  // Flat landing zone for the outpost; distant ridge (the crater rim) on one side.
   const dist = Math.hypot(x, z)
   const flat = THREE.MathUtils.smoothstep(dist, 16, 30)
   const ridge = Math.max(0, -z - 55) * 0.35

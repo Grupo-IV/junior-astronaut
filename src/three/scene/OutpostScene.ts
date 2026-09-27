@@ -1,5 +1,7 @@
-// The Three.js outpost. Owns renderer, camera and objects; draws a SceneModel.
-// It holds no mission rules — everything it shows comes from `update(model)`.
+/**
+ * @file
+ * @brief Owns the Three.js outpost scene and renders a SceneModel.
+ */
 import * as THREE from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createCamera, createControls } from '../camera/camera'
