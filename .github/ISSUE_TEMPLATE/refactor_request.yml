@@ -1,0 +1,32 @@
+name: "♻️ Refactor Request"
+description: Propor uma melhoria interna sem alterar o comportamento
+title: "♻️ refactor: "
+labels:
+  - refactor
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: Indica o código ou a área que precisa de refatoração.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Justificação
+      description: Explica o custo atual e o benefício esperado.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solução proposta
+  - type: checkboxes
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      options:
+        - label: O comportamento existente permanece intacto.
+        - label: Os testes existentes continuam verdes.
+        - label: A alteração mantém as fronteiras da arquitetura.
