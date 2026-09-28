@@ -1,0 +1,34 @@
+name: "✨ Feature Request"
+description: Propor uma funcionalidade ou melhoria para a missão
+title: "✨ feat: "
+labels:
+  - feat
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: Explica a funcionalidade ou melhoria proposta.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto
+      description: Explica que problema de missão, ciência ou aprendizagem esta mudança resolve.
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solução proposta
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      description: Lista resultados observáveis e testáveis.
+    validations:
+      required: true
+  - type: input
+    id: traceability
+    attributes:
+      label: Rastreabilidade
+      description: Indica o Sprint e códigos como S3/N4, quando aplicável.

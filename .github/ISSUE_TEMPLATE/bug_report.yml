@@ -1,0 +1,39 @@
+name: "🐛 Bug Report"
+description: Reportar um comportamento incorreto no mission trainer
+title: "🐛 bug: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: Explica o problema de forma clara.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Passos para reproduzir
+      description: Lista os passos necessários para observar o problema.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado obtido
+      description: Inclui mensagens de erro, screenshots ou logs relevantes.
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Solução proposta
+  - type: checkboxes
+    id: acceptance
+    attributes:
+      label: Critérios de aceitação
+      options:
+        - label: O comportamento foi reproduzido e validado.
+        - label: O teste ou verificação correspondente foi identificado.
+        - label: A issue inclui Sprint e prioridade quando conhecidos.
