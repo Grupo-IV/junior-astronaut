@@ -1,0 +1,137 @@
+{
+  "buildings": {
+    "solar_array": {
+      "id": "solar_array",
+      "name": "Solar Array",
+      "icon": "☀️",
+      "massKg": 400,
+      "maxCount": 4,
+      "powerDemandKwhPerDay": 0,
+      "shedPriority": 99,
+      "powerOutputKwhPerDay": 90,
+      "summary": "Vertical panels that track the low polar Sun. 90 kWh per day in full sunlight.",
+      "benefit": "Free energy while the Sun shines.",
+      "tradeoff": "Produces almost nothing in shadow and gets covered by lunar dust.",
+      "science": { "text": "At the lunar poles the Sun stays near the horizon, so arrays are mounted vertically and rotate to follow it. Terrain can shadow them for days.", "source": "southPole" }
+    },
+    "battery": {
+      "id": "battery",
+      "name": "Battery Storage",
+      "icon": "🔋",
+      "massKg": 250,
+      "maxCount": 5,
+      "powerDemandKwhPerDay": 0,
+      "shedPriority": 99,
+      "storageKwh": 60,
+      "summary": "Lithium-ion pack storing 60 kWh for when the Sun is gone.",
+      "benefit": "Keeps life support running through shadow periods.",
+      "tradeoff": "Heavy: about 240 Wh per kg. Stores energy but never produces it.",
+      "science": { "text": "Space-rated lithium-ion batteries store roughly 150–250 Wh per kilogram. Energy storage is often the heaviest part of a surface power system.", "source": "powerRoadmap" }
+    },
+    "water_recycler": {
+      "id": "water_recycler",
+      "name": "Water Recycler",
+      "icon": "♻️",
+      "massKg": 600,
+      "maxCount": 1,
+      "powerDemandKwhPerDay": 12,
+      "shedPriority": 3,
+      "waterRecoveryRate": 0.93,
+      "summary": "Recovers 93% of the water the crew uses — from humidity, washing and urine.",
+      "benefit": "Water lasts many times longer.",
+      "tradeoff": "Heavy, needs power every day, and can break.",
+      "science": { "text": "The ISS Water Recovery System reclaims around 93% of water; with the Brine Processor it reached 98% in 2023.", "source": "eclssWater" }
+    },
+    "greenhouse": {
+      "id": "greenhouse",
+      "name": "Greenhouse",
+      "icon": "🌱",
+      "massKg": 900,
+      "maxCount": 1,
+      "powerDemandKwhPerDay": 40,
+      "shedPriority": 1,
+      "growthDays": 7,
+      "foodOutputKgPerDay": 2,
+      "oxygenBonusKgPerDay": 0.8,
+      "waterUseKgPerDay": 2,
+      "summary": "LED-lit hydroponic racks. After 7 days of growth: 2 kg food and 0.8 kg oxygen per day.",
+      "benefit": "Food and oxygen made on the Moon.",
+      "tradeoff": "Hungry for power and water, slow to start, and crops can get sick.",
+      "science": { "text": "NASA's Veggie and Advanced Plant Habitat have grown lettuce, radishes and peppers on the ISS. Plants turn CO₂ into oxygen, but need lots of light energy.", "source": "plants" }
+    },
+    "oxygen_generator": {
+      "id": "oxygen_generator",
+      "name": "Oxygen Generator",
+      "icon": "🫧",
+      "massKg": 500,
+      "maxCount": 1,
+      "powerDemandKwhPerDay": 30,
+      "shedPriority": 2,
+      "oxygenOutputKgPerDay": 4,
+      "waterPerKgOxygen": 1.125,
+      "oxygenSetpointDays": 10,
+      "summary": "Splits water into oxygen and hydrogen with electricity (electrolysis). Up to 4 kg O₂ per day; it throttles to keep about 10 days of oxygen in reserve.",
+      "benefit": "Makes breathable oxygen from water.",
+      "tradeoff": "Uses 1.125 kg of water for every kg of oxygen, and a lot of power.",
+      "science": { "text": "Electrolysis: 2 H₂O → 2 H₂ + O₂. By molar mass, 1 kg of oxygen needs 1.125 kg of water. The ISS Oxygen Generation Assembly works this way.", "source": "eclss" }
+    },
+    "radiation_shelter": {
+      "id": "radiation_shelter",
+      "name": "Radiation Shelter",
+      "icon": "🛡️",
+      "massKg": 1200,
+      "maxCount": 1,
+      "powerDemandKwhPerDay": 4,
+      "shedPriority": 4,
+      "stormDoseFactor": 0.1,
+      "summary": "Small room buried under bags of lunar soil (regolith). Blocks ~90% of solar-storm radiation.",
+      "benefit": "Protects the crew during solar storms.",
+      "tradeoff": "The heaviest item you can bring — and useless on a calm day.",
+      "science": { "text": "A few tens of g/cm² of regolith or water stop most solar-storm protons. Galactic cosmic rays are far harder to block.", "source": "radiation" }
+    }
+  },
+  "cargo": {
+    "water_crate": {
+      "id": "water_crate",
+      "name": "Water Tank",
+      "icon": "💧",
+      "massKg": 115,
+      "maxCount": 6,
+      "stock": "water",
+      "contentKg": 100,
+      "summary": "100 kg of water in a 15 kg tank.",
+      "science": { "text": "An astronaut needs about 3.5 kg of water per day for drinking, food and basic hygiene.", "source": "bvad" }
+    },
+    "oxygen_tank": {
+      "id": "oxygen_tank",
+      "name": "Oxygen Tank",
+      "icon": "🫁",
+      "massKg": 45,
+      "maxCount": 8,
+      "stock": "oxygen",
+      "contentKg": 20,
+      "summary": "20 kg of compressed oxygen. The high-pressure tank weighs more than the gas.",
+      "science": { "text": "Each astronaut breathes about 0.84 kg of oxygen per day.", "source": "bvad" }
+    },
+    "food_crate": {
+      "id": "food_crate",
+      "name": "Food Crate",
+      "icon": "🥫",
+      "massKg": 50,
+      "maxCount": 8,
+      "stock": "food",
+      "contentKg": 40,
+      "summary": "40 kg of packaged space food.",
+      "science": { "text": "Space food, including packaging, weighs about 1.8 kg per astronaut per day.", "source": "bvad" }
+    },
+    "spare_parts": {
+      "id": "spare_parts",
+      "name": "Spare Parts Kit",
+      "icon": "🧰",
+      "massKg": 80,
+      "maxCount": 4,
+      "summary": "Pumps, valves, seals and circuit boards. One kit fixes one broken system.",
+      "science": { "text": "The Moon is 3 days from Earth — you can't order a replacement part. Missions carry spares for the systems most likely to fail.", "source": "eclss" }
+    }
+  }
+}

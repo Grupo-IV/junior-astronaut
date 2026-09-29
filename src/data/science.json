@@ -1,0 +1,142 @@
+{
+  "sources": {
+    "bvad": {
+      "title": "Life Support Baseline Values and Assumptions Document (BVAD), NASA/TP-2015-218570/REV2",
+      "org": "NASA",
+      "url": "https://ntrs.nasa.gov/citations/20210024855"
+    },
+    "std3001": {
+      "title": "NASA-STD-3001 Vol. 1, Crew Health — space permissible exposure limits for radiation",
+      "org": "NASA Office of the Chief Health & Medical Officer",
+      "url": "https://standards.nasa.gov/standard/NASA/NASA-STD-3001-VOL-1"
+    },
+    "radiation": {
+      "title": "First measurements of the radiation dose on the lunar surface (Chang'e-4 LND), Zhang et al., Science Advances 6(39), 2020",
+      "org": "Science Advances / NASA-supported research",
+      "url": "https://www.science.org/doi/10.1126/sciadv.aaz1334"
+    },
+    "swpc": {
+      "title": "NOAA Space Weather Scales — Solar Radiation Storms (S1–S5)",
+      "org": "NOAA Space Weather Prediction Center",
+      "url": "https://www.swpc.noaa.gov/noaa-scales-explanation"
+    },
+    "eclss": {
+      "title": "Environmental Control and Life Support Systems (ECLSS)",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/"
+    },
+    "eclssWater": {
+      "title": "NASA Achieves Water Recovery Milestone on International Space Station (2023)",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/"
+    },
+    "plants": {
+      "title": "Growing Plants in Space (Veggie and Advanced Plant Habitat)",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/exploration-research-and-technology/growing-plants-in-space/"
+    },
+    "southPole": {
+      "title": "Artemis III candidate landing regions near the lunar South Pole",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/news-release/nasa-identifies-candidate-regions-for-landing-next-americans-on-moon/"
+    },
+    "dust": {
+      "title": "The Effects of Lunar Dust on EVA Systems During the Apollo Missions, NASA/TM-2005-213610",
+      "org": "NASA Glenn Research Center",
+      "url": "https://ntrs.nasa.gov/citations/20050160460"
+    },
+    "powerRoadmap": {
+      "title": "NASA Technology Roadmaps TA 3: Space Power and Energy Storage (2015)",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/offices/oct/home/roadmaps/index.html"
+    },
+    "artemis": {
+      "title": "NASA's Plan for Sustained Lunar Exploration and Development (Artemis Base Camp)",
+      "org": "NASA",
+      "url": "https://www.nasa.gov/wp-content/uploads/2020/08/a_sustained_lunar_presence_nspc_report4220final.pdf"
+    }
+  },
+  "parameters": [
+    { "name": "Oxygen consumed per astronaut", "value": 0.84, "unit": "kg/day", "gameValue": 0.84, "source": "bvad", "note": "Nominal metabolic O₂ consumption for an average crew member." },
+    { "name": "Water used per astronaut", "value": 3.5, "unit": "kg/day", "gameValue": 3.5, "source": "bvad", "note": "Drinking, food rehydration and minimal hygiene. Full hygiene and laundry would need much more." },
+    { "name": "Food per astronaut (with packaging)", "value": 1.8, "unit": "kg/day", "gameValue": 1.8, "source": "bvad", "note": "Packaged ISS-style food system." },
+    { "name": "Water recovery rate", "value": 0.93, "unit": "fraction", "gameValue": 0.93, "source": "eclssWater", "note": "ISS Water Recovery System; 98% with the Brine Processor Assembly (2023)." },
+    { "name": "Water needed per kg of O₂ (electrolysis)", "value": 1.125, "unit": "kg/kg", "gameValue": 1.125, "source": "eclss", "note": "Stoichiometry of 2 H₂O → 2 H₂ + O₂ (18 g water per 16 g O₂)." },
+    { "name": "Radiation dose on the lunar surface (GCR)", "value": 1.37, "unit": "mSv/day", "gameValue": 1.37, "source": "radiation", "note": "Dose equivalent measured by Chang'e-4 LND: 1369 µSv/day. Habitat walls reduce it modestly (game factor 0.7)." },
+    { "name": "Short-term radiation limit (30 days, blood-forming organs)", "value": 250, "unit": "mGy-Eq", "gameValue": 250, "source": "std3001", "note": "Used as the mission-failure threshold (treated as mSv for simplicity)." },
+    { "name": "Solar storm dose inside a thin habitat", "value": 60, "unit": "mSv/day", "gameValue": 60, "source": "swpc", "note": "Game estimate for an S3 storm; large historical events (e.g. August 1972) could have delivered far more behind thin shielding." },
+    { "name": "Shelter storm-dose reduction", "value": 0.9, "unit": "fraction blocked", "gameValue": 0.9, "source": "radiation", "note": "Order-of-magnitude reduction for ~20–30 g/cm² of regolith or water against solar-proton spectra." },
+    { "name": "Li-ion battery specific energy", "value": 240, "unit": "Wh/kg", "gameValue": 240, "source": "powerRoadmap", "note": "60 kWh module = 250 kg in the game." },
+    { "name": "Typical crew size", "value": 4, "unit": "astronauts", "gameValue": 4, "source": "artemis", "note": "Artemis crews are planned around four astronauts." }
+  ],
+  "lessons": {
+    "oxygen": {
+      "title": "The crew ran out of oxygen",
+      "what": "The oxygen stored in the base reached zero.",
+      "why": "Four astronauts breathe about 3.4 kg of oxygen every day. Oxygen tanks are heavy, and the oxygen generator needs both water and power to make more.",
+      "principle": "Life support is a chain: oxygen depends on water, and making oxygen depends on power. If any link breaks, the whole chain fails.",
+      "alternatives": [
+        "Bring more oxygen tanks, or an oxygen generator for longer missions",
+        "Keep the oxygen generator powered — don't let it be the first thing shed",
+        "Carry spare parts so a broken generator can be fixed",
+        "A greenhouse adds a little oxygen as a backup"
+      ]
+    },
+    "water": {
+      "title": "The base ran out of water",
+      "what": "Stored water reached zero.",
+      "why": "Water is used for drinking, food, hygiene — and to make oxygen and grow plants. Without recycling, every drop used is gone.",
+      "principle": "Closing the loop: recycling 93% of water means you need about 14 times less water from Earth. The longer the mission, the more recycling pays off.",
+      "alternatives": [
+        "Bring a water recycler — on long missions it's lighter than the water it saves",
+        "Fix leaks quickly instead of letting them run",
+        "Watch the oxygen generator: it turns water into oxygen"
+      ]
+    },
+    "food": {
+      "title": "The crew ran out of food",
+      "what": "Food stores stayed empty for several days and mission control ordered an abort.",
+      "why": "Four astronauts eat about 7 kg of packaged food a day. A greenhouse takes a week to produce its first harvest and only covers part of the need.",
+      "principle": "Plan for growth time: biological systems take days or weeks to start producing, so stored food must bridge the gap.",
+      "alternatives": [
+        "Bring enough food crates to cover the days before the first harvest",
+        "Keep the greenhouse powered and healthy",
+        "Don't count on the greenhouse alone — it's a supplement, not a full supply"
+      ]
+    },
+    "power": {
+      "title": "Critical power failure",
+      "what": "The batteries were empty and the solar arrays couldn't power the habitat's core life support for several days.",
+      "why": "When solar generation drops — in shadow, or with dusty panels — the base lives on stored energy. Once batteries run dry, heating, air circulation and CO₂ removal stop.",
+      "principle": "Energy storage must cover critical loads during the longest expected period of low generation, with a safety margin.",
+      "alternatives": [
+        "Bring more battery modules to cover the shadow period",
+        "Add solar arrays so batteries recharge faster in sunlight",
+        "Switch off non-essential systems (greenhouse first) before the shadow arrives",
+        "Clean dusty panels quickly"
+      ]
+    },
+    "radiation": {
+      "title": "Radiation dose exceeded the safety limit",
+      "what": "The crew's radiation dose passed 250 mSv, NASA's short-term safety limit. Mission control ordered an emergency return.",
+      "why": "The Moon has no magnetic field or thick atmosphere. During a solar storm, the dose inside a thin-walled habitat can rise to tens of mSv per day.",
+      "principle": "Radiation protection = time + distance + shielding. You can't control the Sun, so you need mass (regolith, water) between the crew and the storm.",
+      "alternatives": [
+        "Bring a radiation shelter and use it during storms",
+        "Keep at least 100 kg of water to build a water wall if you have no shelter",
+        "Don't continue normal operations during a severe storm"
+      ]
+    }
+  },
+  "successLesson": {
+    "title": "Mission accomplished!",
+    "what": "Your crew survived the whole mission and the base kept running.",
+    "why": "You balanced power, water, oxygen, food and radiation protection — even when the storm and the shadow hit.",
+    "principle": "Mission design is about trade-offs: every kilogram and every kilowatt-hour spent on one system is not available for another.",
+    "alternatives": [
+      "Try the mission again with a lighter loadout",
+      "Try a different choice during the solar storm and compare the dose",
+      "Take on the Commander mission: 28 days at Artemis Base Camp"
+    ]
+  }
+}

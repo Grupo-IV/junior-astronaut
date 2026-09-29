@@ -1,0 +1,325 @@
+{
+  "events": {
+    "solar_storm": {
+      "id": "solar_storm",
+      "title": "Solar Storm Detected",
+      "icon": "🌞",
+      "what": "A huge flare on the Sun has launched a cloud of fast protons toward the Moon. For the next 2 days, radiation at the base will be dozens of times higher than normal.",
+      "why": "The Moon has no magnetic field and almost no atmosphere. On Earth, both shield us from solar particles — on the Moon, only walls, soil and water do.",
+      "principle": "Shielding works by putting mass between people and radiation. Dense, hydrogen-rich material (water, regolith, polyethylene) stops solar protons best.",
+      "source": "radiation",
+      "onTrigger": [],
+      "variants": {
+        "moderate": {
+          "label": "Moderate storm (NOAA S3)",
+          "onTrigger": [
+            { "type": "modifier", "kind": "storm_dose", "value": 60, "days": 2, "label": "Solar storm: +60 mSv/day inside the habitat" }
+          ]
+        },
+        "severe": {
+          "label": "Severe storm (NOAA S4)",
+          "onTrigger": [
+            { "type": "modifier", "kind": "storm_dose", "value": 110, "days": 2, "label": "Severe solar storm: +110 mSv/day inside the habitat" }
+          ]
+        }
+      },
+      "options": [
+        {
+          "id": "shelter",
+          "label": "Move crew into the radiation shelter",
+          "icon": "🛡️",
+          "benefit": "Blocks about 90% of the storm's radiation.",
+          "cost": "Shelter life support uses +10 kWh/day. Nobody tends the greenhouse (half production). Electronics outside stay exposed.",
+          "requires": { "building": "radiation_shelter" },
+          "effects": [
+            { "type": "modifier", "kind": "dose_factor", "value": 0.1, "days": 2, "label": "Crew in shelter: 90% of storm dose blocked" },
+            { "type": "modifier", "kind": "extra_power", "value": 10, "days": 2, "label": "Shelter life support: +10 kWh/day" },
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 2, "label": "Greenhouse unattended: 50% output" },
+            {
+              "type": "chance",
+              "probability": 0.3,
+              "effects": [{ "type": "failBuilding", "target": "random-active" }],
+              "note": "A proton strike scrambled a circuit board (a 'single-event upset'): one system has failed.",
+              "otherwiseNote": "The base's electronics rode out the storm without damage."
+            }
+          ],
+          "risks": ["power"],
+          "lesson": "A dedicated shelter turns a dangerous storm into a small dose — but only if you launched it, and it has a power cost."
+        },
+        {
+          "id": "water_wall",
+          "label": "Build a water wall around the sleeping area",
+          "icon": "💧",
+          "benefit": "Uses stored water as shielding: blocks about half of the storm dose. No water is lost.",
+          "cost": "Needs at least 100 kg of stored water. Crew busy moving tanks: greenhouse at half output.",
+          "requires": { "minStock": { "stock": "water", "amount": 100 } },
+          "effects": [
+            { "type": "modifier", "kind": "dose_factor", "value": 0.5, "days": 2, "label": "Water wall: 50% of storm dose blocked" },
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 2, "label": "Crew busy moving water: greenhouse 50%" },
+            {
+              "type": "chance",
+              "probability": 0.3,
+              "effects": [{ "type": "failBuilding", "target": "random-active" }],
+              "note": "A proton strike scrambled a circuit board (a 'single-event upset'): one system has failed.",
+              "otherwiseNote": "The base's electronics rode out the storm without damage."
+            }
+          ],
+          "risks": ["radiation"],
+          "lesson": "Water is one of the best radiation shields because it is full of hydrogen. Real spacecraft designs put water tanks around crew quarters."
+        },
+        {
+          "id": "safe_mode",
+          "label": "Put the base in safe mode",
+          "icon": "🔌",
+          "benefit": "Powers down the greenhouse, oxygen generator and recycler so the storm can't damage them. Saves a lot of energy.",
+          "cost": "No extra protection for the crew. No food, oxygen or water recycling for 2 days.",
+          "effects": [
+            { "type": "modifier", "kind": "building_offline", "target": "greenhouse", "value": 1, "days": 2, "label": "Safe mode: greenhouse off" },
+            { "type": "modifier", "kind": "building_offline", "target": "oxygen_generator", "value": 1, "days": 2, "label": "Safe mode: oxygen generator off" },
+            { "type": "modifier", "kind": "building_offline", "target": "water_recycler", "value": 1, "days": 2, "label": "Safe mode: water recycler off" }
+          ],
+          "risks": ["radiation", "oxygen", "water"],
+          "lesson": "Spacecraft enter 'safe mode' to protect their electronics from radiation. It protects the machines — not the people."
+        },
+        {
+          "id": "continue",
+          "label": "Continue normal operations",
+          "icon": "▶️",
+          "benefit": "Every system keeps producing at full rate.",
+          "cost": "The crew receives the full storm dose, and electronics can be hit.",
+          "effects": [
+            {
+              "type": "chance",
+              "probability": 0.3,
+              "effects": [{ "type": "failBuilding", "target": "random-active" }],
+              "note": "A proton strike scrambled a circuit board (a 'single-event upset'): one system has failed.",
+              "otherwiseNote": "The base's electronics rode out the storm without damage."
+            }
+          ],
+          "risks": ["radiation"],
+          "lesson": "Radiation dose adds up over a mission. A single strong storm can use up a large share of an astronaut's safe limit."
+        }
+      ]
+    },
+    "power_failure": {
+      "id": "power_failure",
+      "title": "Power Failure: Dust on the Solar Arrays",
+      "icon": "🌫️",
+      "what": "A nearby rover landing kicked up lunar dust, which settled on the solar panels. Their output has dropped by almost half.",
+      "why": "Lunar dust (regolith) is sharp, clingy and electrically charged. With no wind or rain, nothing cleans it off.",
+      "principle": "A power system is only as good as its worst day. Engineers design for degraded performance, not just ideal conditions.",
+      "source": "dust",
+      "conditions": { "building": "solar_array" },
+      "onTrigger": [],
+      "options": [
+        {
+          "id": "eva_clean",
+          "label": "Send two astronauts outside to clean the panels",
+          "icon": "🧑‍🚀",
+          "benefit": "Panels back to 90% tomorrow and normal after that.",
+          "cost": "A spacewalk adds radiation dose (+0.5 mSv) and takes the crew away from the greenhouse for a day.",
+          "effects": [
+            { "type": "addDose", "msv": 0.5 },
+            { "type": "modifier", "kind": "solar_output", "value": 0.9, "days": 1, "label": "Some dust left: solar 90%" },
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 1, "label": "Crew on EVA: greenhouse 50%" }
+          ],
+          "risks": [],
+          "lesson": "Spacewalks (EVAs) solve problems fast, but every hour outside costs crew time and radiation exposure."
+        },
+        {
+          "id": "robot",
+          "label": "Let the cleaning robot do it slowly",
+          "icon": "🤖",
+          "benefit": "No crew time and no extra radiation.",
+          "cost": "Solar power stays at 75% for 3 days.",
+          "effects": [
+            { "type": "modifier", "kind": "solar_output", "value": 0.75, "days": 3, "label": "Robot cleaning: solar 75%" }
+          ],
+          "risks": ["power"],
+          "lesson": "Automation saves crew time, which is the most precious resource on a mission — but it is usually slower."
+        },
+        {
+          "id": "ignore",
+          "label": "Ignore it for now",
+          "icon": "⏭️",
+          "benefit": "No effort at all today.",
+          "cost": "Solar power at 55% for 6 days while the dust slowly falls off.",
+          "effects": [
+            { "type": "modifier", "kind": "solar_output", "value": 0.55, "days": 6, "label": "Dusty panels: solar 55%" }
+          ],
+          "risks": ["power"],
+          "lesson": "Small problems left alone can line up with bigger ones — like dusty panels right before a shadow period."
+        }
+      ]
+    },
+    "water_leak": {
+      "id": "water_leak",
+      "title": "Water Leak",
+      "icon": "💦",
+      "what": "A fitting on the main water tank cracked in the cold. 8 kg of water has already leaked, and it's still dripping.",
+      "why": "Temperatures on the Moon swing by hundreds of degrees. Metal expands and shrinks, and seals and fittings wear out.",
+      "principle": "Redundancy and spare parts turn a crisis into a routine repair.",
+      "source": "eclss",
+      "onTrigger": [{ "type": "addStock", "stock": "water", "amount": -8 }],
+      "options": [
+        {
+          "id": "spare_fix",
+          "label": "Replace the fitting with a spare part",
+          "icon": "🧰",
+          "benefit": "Leak fixed right away.",
+          "cost": "Uses one spare parts kit (5 kg more water lost during the swap).",
+          "requires": { "spareParts": 1 },
+          "effects": [
+            { "type": "useSpare", "amount": 1 },
+            { "type": "addStock", "stock": "water", "amount": -5 }
+          ],
+          "risks": [],
+          "lesson": "Spare parts are mass you hope never to use — until the day they save the mission."
+        },
+        {
+          "id": "patch",
+          "label": "Patch it with tape and sealant",
+          "icon": "🩹",
+          "benefit": "Free, and usually slows the leak a lot.",
+          "cost": "Still loses 4% of stored water per day for 2 days. Might fail.",
+          "effects": [
+            { "type": "modifier", "kind": "water_loss", "value": 0.04, "days": 2, "label": "Patched leak: -4% water/day" },
+            {
+              "type": "chance",
+              "probability": 0.3,
+              "effects": [{ "type": "modifier", "kind": "water_loss", "value": 0.06, "days": 3, "label": "Patch failed: -6% water/day" }],
+              "note": "The patch didn't hold — the leak continues for 3 more days.",
+              "otherwiseNote": "The patch is holding."
+            }
+          ],
+          "risks": ["water"],
+          "lesson": "Improvised repairs are a real part of spaceflight — Apollo 13's crew famously built a CO₂ filter adapter from spare materials."
+        },
+        {
+          "id": "isolate",
+          "label": "Close the valves and isolate the tank",
+          "icon": "🚱",
+          "benefit": "Leak stops immediately and for sure.",
+          "cost": "20% of your stored water is trapped in the isolated tank.",
+          "effects": [{ "type": "scaleStock", "stock": "water", "factor": 0.8 }],
+          "risks": ["water"],
+          "lesson": "Isolating a failed part protects the rest of the system — a key idea in spacecraft design."
+        },
+        {
+          "id": "monitor",
+          "label": "Just monitor it",
+          "icon": "👀",
+          "benefit": "No effort or parts spent.",
+          "cost": "Loses 8% of stored water per day for 4 days.",
+          "effects": [{ "type": "modifier", "kind": "water_loss", "value": 0.08, "days": 4, "label": "Leak: -8% water/day" }],
+          "risks": ["water"],
+          "lesson": "A slow leak compounds: 8% per day for 4 days loses about 28% of your water."
+        }
+      ]
+    },
+    "equipment_failure": {
+      "id": "equipment_failure",
+      "title": "Equipment Failure",
+      "icon": "⚠️",
+      "what": "A pump failed inside one of your life-support machines. It has shut down.",
+      "why": "Pumps, fans and valves run non-stop. On the ISS, life-support parts are regularly replaced because they wear out.",
+      "principle": "Reliability engineering: every part will fail eventually. Plan for repairs and keep critical systems redundant.",
+      "source": "eclss",
+      "conditions": { "anyBuilding": ["oxygen_generator", "water_recycler"] },
+      "onTrigger": [{ "type": "failBuilding", "target": "random-life-support" }],
+      "options": [
+        {
+          "id": "spare",
+          "label": "Install a new pump from the spare parts kit",
+          "icon": "🧰",
+          "benefit": "System back online right away.",
+          "cost": "Uses one spare parts kit.",
+          "requires": { "spareParts": 1 },
+          "effects": [
+            { "type": "useSpare", "amount": 1 },
+            { "type": "repairBuilding", "target": "event-target" }
+          ],
+          "risks": [],
+          "lesson": "Carrying spares for the most failure-prone parts is standard practice for ISS life support."
+        },
+        {
+          "id": "improvise",
+          "label": "Try to repair the old pump",
+          "icon": "🔧",
+          "benefit": "Free if it works.",
+          "cost": "Only a 50% chance to work.",
+          "effects": [
+            {
+              "type": "chance",
+              "probability": 0.5,
+              "effects": [{ "type": "repairBuilding", "target": "event-target" }],
+              "note": "The repair worked — the system is back online!",
+              "otherwiseNote": "The repair failed. The system stays offline — you can try again from the Systems panel."
+            }
+          ],
+          "risks": ["oxygen", "water"],
+          "lesson": "Being able to repair things on site makes a crew far less dependent on Earth."
+        },
+        {
+          "id": "later",
+          "label": "Leave it off for now",
+          "icon": "⏸️",
+          "benefit": "Saves its power for other systems.",
+          "cost": "No production until you repair it from the Systems panel.",
+          "effects": [],
+          "risks": ["oxygen", "water"],
+          "lesson": "Turning a broken system off saves power, but your stored supplies now have to cover the gap."
+        }
+      ]
+    },
+    "crop_failure": {
+      "id": "crop_failure",
+      "title": "Crop Failure",
+      "icon": "🥀",
+      "what": "A root disease is spreading through the greenhouse. The plants are wilting.",
+      "why": "In a closed greenhouse, microbes spread fast through shared water. There are no natural predators to keep them in check.",
+      "principle": "Biological systems are productive but less predictable than machines. Missions keep stored food as a backup.",
+      "source": "plants",
+      "conditions": { "productiveGreenhouse": true },
+      "onTrigger": [],
+      "options": [
+        {
+          "id": "replant",
+          "label": "Clear everything and replant",
+          "icon": "🌱",
+          "benefit": "Healthy plants again, full output once they grow.",
+          "cost": "No harvest for the next 7 days while new plants grow. Uses 10 kg of water to sterilize.",
+          "effects": [
+            { "type": "resetGrowth" },
+            { "type": "addStock", "stock": "water", "amount": -10 }
+          ],
+          "risks": ["food"],
+          "lesson": "Restarting a biological system takes time — that's why growth time matters when planning food."
+        },
+        {
+          "id": "treat",
+          "label": "Treat the plants and hope",
+          "icon": "💊",
+          "benefit": "Keeps some production going.",
+          "cost": "Only 40% output for 4 days, and the treatment system uses +5 kWh/day.",
+          "effects": [
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.4, "days": 4, "label": "Sick plants: greenhouse 40%" },
+            { "type": "modifier", "kind": "extra_power", "value": 5, "days": 4, "label": "Plant treatment: +5 kWh/day" }
+          ],
+          "risks": ["food"],
+          "lesson": "Partial output is often better than none — but it comes with its own costs."
+        },
+        {
+          "id": "shutdown",
+          "label": "Shut the greenhouse down",
+          "icon": "⛔",
+          "benefit": "Frees 40 kWh/day of power and 2 kg/day of water.",
+          "cost": "No more fresh food or plant oxygen (you can switch it back on, but it restarts from zero).",
+          "effects": [{ "type": "disableBuilding", "target": "greenhouse" }, { "type": "resetGrowth" }],
+          "risks": ["food", "oxygen"],
+          "lesson": "Sometimes the best engineering decision is to cut your losses and redirect resources."
+        }
+      ]
+    }
+  }
+}
