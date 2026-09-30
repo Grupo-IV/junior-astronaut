@@ -14,7 +14,7 @@ Issue
 Working branch: feature/*  fix/*  research/*  refactor/*  docs/*
   │
   │ Pull Request
-  │ merge or squash
+  │ merge only
   ▼
 develop
   │
@@ -86,7 +86,7 @@ Do not use `main` as the source for a new development branch unless there is a s
 | Branch       | Purpose                          | Direct push | Merge strategy  |
 | ------------ | -------------------------------- | ----------: | --------------- |
 | `main`       | Release / production             |          No | Squash only     |
-| `develop`    | Integration / active development |          No | Merge or squash |
+| `develop`    | Integration / active development |          No | Merge only      |
 | `feature/*`  | New functionality                |         Yes | PR → `develop`  |
 | `fix/*`      | Bug fixes                        |         Yes | PR → `develop`  |
 | `research/*` | Scientific or technical research |         Yes | PR → `develop`  |
@@ -199,10 +199,9 @@ develop  -----►  main
 
 ## Merge Strategy
 
-Pull Requests from `work branches` into `develop` may use either:
+Pull Requests from `work branches` into `develop` may use:
 
 * **Merge commit**
-* **Squash and merge**
 
 Pull Requests from `develop` into `main` use:
 
