@@ -1,0 +1,24 @@
+name: PR Source Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+jobs:
+  source-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate source branch
+        if: github.head_ref != 'develop' || github.event.pull_request.head.repo.full_name != github.repository
+        env:
+          HEAD: ${{ github.event.pull_request.head.repo.full_name }}:${{ github.head_ref }}
+        run: |
+          echo "::error::PRs into main must come from develop in this repository (got $HEAD)"
+          exit 1
