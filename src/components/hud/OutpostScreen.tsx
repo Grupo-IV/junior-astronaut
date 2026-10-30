@@ -10,6 +10,7 @@ import { ConsequencePanel } from '../decisions/ConsequencePanel'
 import { EventModal } from '../events/EventModal'
 import { ResourcePanel } from '../resources/ResourcePanel'
 import { Button, fmt } from '../ui/ui'
+import { GlossaryText } from '../ui/Term'
 import { MissionLog } from './MissionLog'
 import { SystemsPanel } from './SystemsPanel'
 
@@ -114,9 +115,13 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
             >
               <p className="font-display text-3xl font-bold">{mission.status === 'success' ? '🏁 Mission complete!' : '❌ Mission failed'}</p>
               <p className="mt-1 text-ink-2">
-                {mission.status === 'success'
-                  ? `All ${def.durationDays} days survived · dose ${fmt(mission.crewDoseMsv)} mSv`
-                  : `${gameContent.science.lessons[mission.failure!.cause].title} on day ${mission.failure!.day}`}
+                <GlossaryText
+                  text={
+                    mission.status === 'success'
+                      ? `All ${def.durationDays} days survived · dose ${fmt(mission.crewDoseMsv)} mSv`
+                      : `${gameContent.science.lessons[mission.failure!.cause].title} on day ${mission.failure!.day}`
+                  }
+                />
               </p>
               <Button variant="primary" className="mt-4" onClick={() => dispatch({ type: 'navigate', screen: 'result' })}>
                 See the mission analysis →

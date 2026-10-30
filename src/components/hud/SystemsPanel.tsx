@@ -6,6 +6,7 @@ import { useApp } from '../../app/state/AppContext'
 import { canRepair, gameContent, isGreenhouseProductive, wantsToRun } from '../../game'
 import type { BuildingInstance, MissionState } from '../../types/game'
 import { Button, Panel, SourceLink, StatusTag, type Level } from '../ui/ui'
+import { GlossaryText, Term } from '../ui/Term'
 
 function statusOf(mission: MissionState, b: BuildingInstance): { level: Level; word: string } {
   const def = gameContent.buildings[b.defId]
@@ -29,7 +30,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
       <div className="p-2">
         <div className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm">
           <span>
-            <span aria-hidden>🏠</span> Habitat <span className="text-xs text-ink-3">{gameContent.environment.habitat.powerDemandKwhPerDay} kWh/day</span>
+            <span aria-hidden>🏠</span> Habitat <span className="text-xs text-ink-3">{gameContent.environment.habitat.powerDemandKwhPerDay} <Term id="kwh">kWh</Term>/day</span>
           </span>
           <StatusTag level={mission.lastReport?.habitatUnpowered ? 'critical' : 'good'} word={mission.lastReport?.habitatUnpowered ? 'NO POWER' : 'ONLINE'} />
         </div>
@@ -69,14 +70,20 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
                 <p className="font-display text-base font-bold">
                   {def.icon} {def.name}
                 </p>
-                <p className="mt-1 text-ink-2">{def.summary}</p>
+                <p className="mt-1 text-ink-2">
+                  <GlossaryText text={def.summary} />
+                </p>
                 <p className="mt-1 text-xs">
-                  <span className="text-good-ink">+ {def.benefit}</span>
+                  <span className="text-good-ink">
+                    + <GlossaryText text={def.benefit} />
+                  </span>
                   <br />
-                  <span className="text-serious">− {def.tradeoff}</span>
+                  <span className="text-serious">
+                    − <GlossaryText text={def.tradeoff} />
+                  </span>
                 </p>
                 <p className="mt-2 text-xs text-ink-3">
-                  {def.science.text} <SourceLink sourceKey={def.science.source} sources={gameContent.science.sources} />
+                  <GlossaryText text={def.science.text} /> <SourceLink sourceKey={def.science.source} sources={gameContent.science.sources} />
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {def.powerDemandKwhPerDay > 0 && (

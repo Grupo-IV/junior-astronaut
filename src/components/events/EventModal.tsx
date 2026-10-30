@@ -8,6 +8,7 @@ import { eventDef, gameContent } from '../../game'
 import type { MissionState } from '../../types/game'
 import { DecisionOptions } from '../decisions/DecisionOptions'
 import { SourceLink } from '../ui/ui'
+import { GlossaryText } from '../ui/Term'
 
 export function EventModal({ mission }: { mission: MissionState }) {
   const { dispatch } = useApp()
@@ -39,7 +40,7 @@ export function EventModal({ mission }: { mission: MissionState }) {
         </div>
         <footer className="rounded-b-2xl border-t border-line bg-panel-2 px-5 py-3 text-xs text-ink-2">
           <strong className="text-accent-2">Engineering principle: </strong>
-          {def.principle} <SourceLink sourceKey={def.source} sources={gameContent.science.sources} />
+          <GlossaryText text={def.principle} /> <SourceLink sourceKey={def.source} sources={gameContent.science.sources} />
         </footer>
       </div>
     </div>
@@ -50,7 +51,9 @@ function Explain({ label, text }: { label: string; text: string }) {
   return (
     <p>
       <strong className="mr-1 font-display tracking-wide text-accent">{label}</strong>
-      <span className="text-ink-2">{text}</span>
+      <span className="text-ink-2">
+        <GlossaryText text={text} />
+      </span>
     </p>
   )
 }
