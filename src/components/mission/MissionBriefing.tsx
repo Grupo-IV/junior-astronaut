@@ -1,6 +1,7 @@
 import { useApp } from '../../app/state/AppContext'
 import { crewNeeds, gameContent, getMission } from '../../game'
 import { Button, fmt, Panel } from '../ui/ui'
+import { GlossaryText } from '../ui/Term'
 
 export function MissionBriefing() {
   const { state, dispatch } = useApp()
@@ -23,7 +24,9 @@ export function MissionBriefing() {
               {mission.briefing.objectives.map((o) => (
                 <li key={o} className="flex gap-2">
                   <span aria-hidden className="text-good-ink">◎</span>
-                  {o}
+                  <span>
+                    <GlossaryText text={o} />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -33,7 +36,9 @@ export function MissionBriefing() {
               {mission.briefing.hazards.map((h) => (
                 <li key={h} className="flex gap-2">
                   <span aria-hidden className="text-warn">⚠</span>
-                  {h}
+                  <span>
+                    <GlossaryText text={h} />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -71,7 +76,9 @@ function Need({ icon, label, value, note }: { icon: string; label: string; value
       <p className="text-ink-3">
         <span aria-hidden>{icon}</span> {label}
       </p>
-      <p className="font-display text-xl">{value}</p>
+      <p className="font-display text-xl">
+        <GlossaryText text={value} />
+      </p>
       <p className="text-xs text-ink-3">{note}</p>
     </div>
   )

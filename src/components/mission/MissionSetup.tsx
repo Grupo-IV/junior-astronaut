@@ -16,6 +16,7 @@ import {
 } from '../../game'
 import type { LoadoutItemId } from '../../types/game'
 import { Button, fmt, Meter, Panel, StatusTag } from '../ui/ui'
+import { GlossaryText, Term } from '../ui/Term'
 import { STOCK_META } from '../resources/stockMeta'
 
 const GROUPS: { title: string; items: LoadoutItemId[] }[] = [
@@ -144,13 +145,13 @@ export function MissionSetup() {
                   <li className="flex justify-between">
                     <span>⚡ Solar in full sun</span>
                     <span className={projection.fullSunGenerationKwh >= projection.fullDemandKwh ? 'text-ink-2' : 'text-critical'}>
-                      {fmt(projection.fullSunGenerationKwh)} / {fmt(projection.fullDemandKwh)} kWh per day
+                      {fmt(projection.fullSunGenerationKwh)} / {fmt(projection.fullDemandKwh)} <Term id="kwh">kWh</Term> per day
                     </span>
                   </li>
                   <li className="flex justify-between">
                     <span>🔋 Lowest battery</span>
                     <span className={projection.lowestEnergyKwh <= 0.5 ? 'text-critical' : 'text-ink-2'}>
-                      {fmt(projection.lowestEnergyKwh)} / {fmt(projection.batteryCapacityKwh)} kWh
+                      {fmt(projection.lowestEnergyKwh)} / {fmt(projection.batteryCapacityKwh)} <Term id="kwh">kWh</Term>
                     </span>
                   </li>
                 </ul>
@@ -192,16 +193,20 @@ function ItemRow({ id, count, onSet, remainingKg }: { id: LoadoutItemId; count: 
           <span aria-hidden className="mr-1">{def.icon}</span>
           {def.name} <span className="ml-1 text-xs font-normal text-ink-3">{fmt(mass)} kg each</span>
         </p>
-        <p className="mt-0.5 text-sm text-ink-2">{def.summary}</p>
+        <p className="mt-0.5 text-sm text-ink-2">
+          <GlossaryText text={def.summary} />
+        </p>
         {building && (
           <p className="mt-1 text-xs text-ink-3">
             <span className="text-good-ink">+ {building.benefit}</span> <span className="text-serious">− {building.tradeoff}</span>
-            {building.powerDemandKwhPerDay > 0 && <span> · uses {building.powerDemandKwhPerDay} kWh/day</span>}
+            {building.powerDemandKwhPerDay > 0 && <span> · uses {building.powerDemandKwhPerDay} <Term id="kwh">kWh</Term>/day</span>}
           </p>
         )}
         <details className="mt-1 text-xs text-ink-3">
           <summary className="cursor-pointer text-accent-2">Why? The science</summary>
-          <p className="mt-1">{def.science.text}</p>
+          <p className="mt-1">
+            <GlossaryText text={def.science.text} />
+          </p>
         </details>
       </div>
       <div className="flex items-center gap-2 self-end sm:self-auto" role="group" aria-label={`${def.name} quantity`}>

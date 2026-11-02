@@ -7,6 +7,7 @@ import { analyzeMission, crewNeeds, gameContent, getMission, scoreMission, state
 import type { MissionState } from '../../types/game'
 import { STOCK_META } from '../resources/stockMeta'
 import { Button, fmt, Panel, Stars, StatusTag } from '../ui/ui'
+import { GlossaryText } from '../ui/Term'
 import { LineChart } from './LineChart'
 
 export function MissionResult({ mission }: { mission: MissionState }) {
@@ -42,7 +43,9 @@ export function MissionResult({ mission }: { mission: MissionState }) {
           <ul className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
             {score.badges.map((b) => (
               <li key={b.label} className="rounded-full border border-line bg-panel px-3 py-1" title={b.detail}>
-                <StatusTag level={b.earned ? 'good' : 'neutral'} word={b.label} /> <span className="text-ink-3">— {b.detail}</span>
+                <StatusTag level={b.earned ? 'good' : 'neutral'} word={b.label} /> <span className="text-ink-3">
+                  — <GlossaryText text={b.detail} />
+                </span>
               </li>
             ))}
           </ul>
@@ -85,7 +88,9 @@ export function MissionResult({ mission }: { mission: MissionState }) {
               {analysis.insights.map((t) => (
                 <li key={t} className="flex gap-2">
                   <span aria-hidden className="text-accent-2">▸</span>
-                  {t}
+                  <span>
+                    <GlossaryText text={t} />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -93,7 +98,9 @@ export function MissionResult({ mission }: { mission: MissionState }) {
               <p className="font-display text-sm font-bold text-accent">{success ? 'Try next' : 'What could you try instead?'}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-2">
                 {analysis.lesson.alternatives.map((a) => (
-                  <li key={a}>{a}</li>
+                  <li key={a}>
+                    <GlossaryText text={a} />
+                  </li>
                 ))}
               </ul>
             </div>
@@ -152,7 +159,9 @@ function Block({ term, text, accent }: { term: string; text: string; accent?: bo
   return (
     <div>
       <dt className={`font-display text-xs font-bold tracking-widest uppercase ${accent ? 'text-accent-2' : 'text-accent'}`}>{term}</dt>
-      <dd className="mt-1 text-ink-2">{text}</dd>
+      <dd className="mt-1 text-ink-2">
+        <GlossaryText text={text} />
+      </dd>
     </div>
   )
 }

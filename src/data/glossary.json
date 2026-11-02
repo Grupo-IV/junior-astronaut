@@ -1,0 +1,20 @@
+{
+  "terms": {
+    "msv": {
+      "name": "millisievert (mSv)",
+      "text": "A unit of radiation dose that also counts how much harm each type of radiation does to the human body. 1 mSv is one-thousandth of a sievert. For comparison, a person on Earth gets about 2–3 mSv per year from natural background radiation."
+    },
+    "kwh": {
+      "name": "kilowatt-hour (kWh)",
+      "text": "A unit of energy: the energy a 1 kW device uses when it runs for one hour (3.6 million joules). Power (kW) is how fast energy is used; kWh is how much energy in total. \"kWh/day\" is the energy used or produced in one day."
+    },
+    "regolith": {
+      "name": "regolith",
+      "text": "The layer of loose material that covers solid rock on the Moon, Mars and asteroids: fine dust, sand-like grains and broken rock, made by billions of years of meteorite impacts. Unlike soil on Earth it contains no living or organic matter. Piled thick enough, it is a good radiation shield."
+    },
+    "electrolysis": {
+      "name": "electrolysis",
+      "text": "Using electricity to drive a chemical reaction that would not happen on its own. For water, 2 H₂O → 2 H₂ + O₂: an electric current splits water into hydrogen gas and breathable oxygen gas. The reaction needs a lot of energy, which is why oxygen generators use so much power."
+    }
+  }
+}

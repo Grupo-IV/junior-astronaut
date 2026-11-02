@@ -7,6 +7,7 @@ import { useApp } from '../../app/state/AppContext'
 import { eventDef, gameContent } from '../../game'
 import type { DecisionRecord } from '../../types/game'
 import { Button } from '../ui/ui'
+import { GlossaryText } from '../ui/Term'
 
 export function ConsequencePanel({ record }: { record: DecisionRecord }) {
   const { dispatch } = useApp()
@@ -23,22 +24,28 @@ export function ConsequencePanel({ record }: { record: DecisionRecord }) {
           <span aria-hidden>{option.icon}</span> {option.label}
         </h2>
         <ul className="mt-3 space-y-1 text-sm">
-          <li className="text-good-ink">＋ {option.benefit}</li>
-          <li className="text-serious">－ {option.cost}</li>
+          <li className="text-good-ink">
+            ＋ <GlossaryText text={option.benefit} />
+          </li>
+          <li className="text-serious">
+            － <GlossaryText text={option.cost} />
+          </li>
         </ul>
         {record.notes.length > 0 && (
           <div className="mt-3 rounded-lg border border-warn/30 bg-warn/10 p-3 text-sm">
             <p className="font-semibold text-warn">What happened</p>
             <ul className="mt-1 list-disc pl-5 text-ink-2">
               {record.notes.map((n) => (
-                <li key={n}>{n}</li>
+                <li key={n}>
+                  <GlossaryText text={n} />
+                </li>
               ))}
             </ul>
           </div>
         )}
         <p className="mt-3 rounded-lg bg-panel-2 p-3 text-sm text-ink-2">
           <strong className="text-accent-2">Lesson: </strong>
-          {option.lesson}
+          <GlossaryText text={option.lesson} />
         </p>
         <p className="mt-2 text-xs text-ink-3">Watch the resource panel and mission log over the next days to see the full effect.</p>
         <div className="mt-4 flex justify-end">

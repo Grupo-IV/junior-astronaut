@@ -1,6 +1,7 @@
 import { crewNeeds, gameContent, getMission, stateBatteryCapacity, SUPPLY_STOCKS, type SupplyStock } from '../../game'
 import type { MissionState } from '../../types/game'
 import { fmt, Meter, Panel, StatusTag, type Level } from '../ui/ui'
+import { GlossaryText, Term } from '../ui/Term'
 import { STOCK_META } from './stockMeta'
 
 function supplyStatus(mission: MissionState, stock: SupplyStock) {
@@ -61,7 +62,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
           <Meter value={mission.stocks.energy} max={capacity} color="var(--color-warn)" label="Battery charge" />
           <div className="mt-0.5 flex justify-between text-xs text-ink-3">
             <span>
-              {fmt(mission.stocks.energy)} / {fmt(capacity)} kWh
+              {fmt(mission.stocks.energy)} / {fmt(capacity)} <Term id="kwh">kWh</Term>
             </span>
             {report && (
               <span>
@@ -82,7 +83,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
           <Meter value={mission.crewDoseMsv} max={env.doseLimitMsv} color="var(--color-serious)" marker={100} label="Crew radiation dose" />
           <div className="mt-0.5 flex justify-between text-xs text-ink-3">
             <span>
-              {fmt(mission.crewDoseMsv, 1)} / {env.doseLimitMsv} mSv limit
+              {fmt(mission.crewDoseMsv, 1)} / {env.doseLimitMsv} <Term id="msv">mSv</Term> limit
             </span>
             {report && <span>+{fmt(report.doseMsv, 1)} today</span>}
           </div>
@@ -97,7 +98,9 @@ function Why({ text }: { text: string }) {
   return (
     <details className="text-xs text-ink-3">
       <summary className="cursor-pointer text-accent-2/80 hover:text-accent-2">Why?</summary>
-      <p className="mt-1">{text}</p>
+      <p className="mt-1">
+        <GlossaryText text={text} />
+      </p>
     </details>
   )
 }
