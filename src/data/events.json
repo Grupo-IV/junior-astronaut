@@ -7,13 +7,13 @@
       "what": "A huge flare on the Sun has launched a cloud of fast protons toward the Moon. For the next 2 days, radiation at the base will be dozens of times higher than normal.",
       "why": "The Moon has no magnetic field and almost no atmosphere. On Earth, both shield us from solar particles — on the Moon, only walls, soil and water do.",
       "principle": "Shielding works by putting mass between people and radiation. Dense, hydrogen-rich material (water, regolith, polyethylene) stops solar protons best.",
-      "source": "radiation",
+      "source": "matthia2024",
       "onTrigger": [],
       "variants": {
         "moderate": {
-          "label": "Moderate storm (NOAA S3)",
+          "label": "Strong storm (NOAA S3)",
           "onTrigger": [
-            { "type": "modifier", "kind": "storm_dose", "value": 60, "days": 2, "label": "Solar storm: +60 mSv/day inside the habitat" }
+            { "type": "modifier", "kind": "storm_dose", "value": 40, "days": 2, "label": "Solar storm: +40 mSv/day inside the habitat" }
           ]
         },
         "severe": {
@@ -28,11 +28,11 @@
           "id": "shelter",
           "label": "Move crew into the radiation shelter",
           "icon": "🛡️",
-          "benefit": "Blocks about 90% of the storm's radiation.",
+          "benefit": "Blocks about 70% of the storm's radiation.",
           "cost": "Shelter life support uses +10 kWh/day. Nobody tends the greenhouse (half production). Electronics outside stay exposed.",
           "requires": { "building": "radiation_shelter" },
           "effects": [
-            { "type": "modifier", "kind": "dose_factor", "value": 0.1, "days": 2, "label": "Crew in shelter: 90% of storm dose blocked" },
+            { "type": "modifier", "kind": "dose_factor", "value": 0.3, "days": 2, "label": "Crew in shelter: 70% of storm dose blocked" },
             { "type": "modifier", "kind": "extra_power", "value": 10, "days": 2, "label": "Shelter life support: +10 kWh/day" },
             { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 2, "label": "Greenhouse unattended: 50% output" },
             {
@@ -44,7 +44,7 @@
             }
           ],
           "risks": ["power"],
-          "lesson": "A dedicated shelter turns a dangerous storm into a small dose — but only if you launched it, and it has a power cost."
+          "lesson": "A dedicated shelter turns a dangerous storm into a much smaller dose — but only if you launched it, and it has a power cost."
         },
         {
           "id": "water_wall",

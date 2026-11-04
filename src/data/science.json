@@ -6,19 +6,29 @@
       "url": "https://ntrs.nasa.gov/citations/20210024855"
     },
     "std3001": {
-      "title": "NASA-STD-3001 Vol. 1, Crew Health — space permissible exposure limits for radiation",
+      "title": "NASA-STD-3001 Volume 1, Revision C (2023): Crew Health — §4.8 Space radiation (V1 4030, V1 4031, Tables 4.8-1 and 4.8-4)",
       "org": "NASA Office of the Chief Health & Medical Officer",
-      "url": "https://standards.nasa.gov/standard/NASA/NASA-STD-3001-VOL-1"
+      "url": "https://standards.nasa.gov/sites/default/files/standards/NASA/C//nasa-std-3001-vol-1-rev-c-signature.pdf"
     },
     "radiation": {
-      "title": "First measurements of the radiation dose on the lunar surface (Chang'e-4 LND), Zhang et al., Science Advances 6(39), 2020",
-      "org": "Science Advances / NASA-supported research",
-      "url": "https://www.science.org/doi/10.1126/sciadv.aaz1334"
+      "title": "First measurements of the radiation dose on the lunar surface (Chang'e-4 LND), Zhang et al., Science Advances 6(39), eaaz1334, 2020",
+      "org": "Science Advances (AAAS) — Chang'e-4 LND, Kiel University & NSSC/CAS",
+      "url": "https://doi.org/10.1126/sciadv.aaz1334"
     },
     "swpc": {
       "title": "NOAA Space Weather Scales — Solar Radiation Storms (S1–S5)",
       "org": "NOAA Space Weather Prediction Center",
-      "url": "https://www.swpc.noaa.gov/noaa-scales-explanation"
+      "url": "https://www.spaceweather.gov/noaa-scales-explanation"
+    },
+    "matthia2024": {
+      "title": "Radiation Exposure and Shielding Effects on the Lunar Surface, Matthiä & Berger, Space Weather 22, e2024SW004095, 2024 (data: Zenodo 10.5281/zenodo.13365755)",
+      "org": "German Aerospace Center (DLR)",
+      "url": "https://doi.org/10.1029/2024SW004095"
+    },
+    "dobynde2024": {
+      "title": "Guidelines for radiation-safe human activities on the Moon, Dobynde & Guo, Nature Astronomy 8, 991–999, 2024",
+      "org": "University of Science and Technology of China",
+      "url": "https://doi.org/10.1038/s41550-024-02287-8"
     },
     "eclss": {
       "title": "Environmental Control and Life Support Systems (ECLSS)",
@@ -46,9 +56,9 @@
       "url": "https://ntrs.nasa.gov/citations/20050160460"
     },
     "powerRoadmap": {
-      "title": "NASA Technology Roadmaps TA 3: Space Power and Energy Storage (2015)",
-      "org": "NASA",
-      "url": "https://www.nasa.gov/offices/oct/home/roadmaps/index.html"
+      "title": "Energy Storage Technology Development for Space Exploration, Mercer et al., NASA/TM-2011-216964 (replaces the 2015 TA 3 roadmap link, which is no longer online)",
+      "org": "NASA Glenn Research Center",
+      "url": "https://ntrs.nasa.gov/citations/20110007105"
     },
     "artemis": {
       "title": "NASA's Plan for Sustained Lunar Exploration and Development (Artemis Base Camp)",
@@ -62,11 +72,15 @@
     { "name": "Food per astronaut (with packaging)", "value": 1.8, "unit": "kg/day", "gameValue": 1.8, "source": "bvad", "note": "Packaged ISS-style food system." },
     { "name": "Water recovery rate", "value": 0.93, "unit": "fraction", "gameValue": 0.93, "source": "eclssWater", "note": "ISS Water Recovery System; 98% with the Brine Processor Assembly (2023)." },
     { "name": "Water needed per kg of O₂ (electrolysis)", "value": 1.125, "unit": "kg/kg", "gameValue": 1.125, "source": "eclss", "note": "Stoichiometry of 2 H₂O → 2 H₂ + O₂ (18 g water per 16 g O₂)." },
-    { "name": "Radiation dose on the lunar surface (GCR)", "value": 1.37, "unit": "mSv/day", "gameValue": 1.37, "source": "radiation", "note": "Dose equivalent measured by Chang'e-4 LND: 1369 µSv/day. Habitat walls reduce it modestly (game factor 0.7)." },
-    { "name": "Short-term radiation limit (30 days, blood-forming organs)", "value": 250, "unit": "mGy-Eq", "gameValue": 250, "source": "std3001", "note": "Used as the mission-failure threshold (treated as mSv for simplicity)." },
-    { "name": "Solar storm dose inside a thin habitat", "value": 60, "unit": "mSv/day", "gameValue": 60, "source": "swpc", "note": "Game estimate for an S3 storm; large historical events (e.g. August 1972) could have delivered far more behind thin shielding." },
-    { "name": "Shelter storm-dose reduction", "value": 0.9, "unit": "fraction blocked", "gameValue": 0.9, "source": "radiation", "note": "Order-of-magnitude reduction for ~20–30 g/cm² of regolith or water against solar-proton spectra." },
-    { "name": "Li-ion battery specific energy", "value": 240, "unit": "Wh/kg", "gameValue": 240, "source": "powerRoadmap", "note": "60 kWh module = 250 kg in the game." },
+    { "name": "Radiation dose on the lunar surface (GCR)", "value": 1.37, "unit": "mSv/day (source quantity: dose equivalent in water from a thin silicon detector, charged particles)", "gameValue": 1.37, "source": "radiation", "note": "Published. Chang'e-4 LND, Jan–Feb 2019 (solar minimum): 1369 µSv/day. A thin detector reads higher than the whole-body average; see the habitat GCR factor." },
+    { "name": "Habitat GCR factor", "value": 0.53, "unit": "fraction (whole-body dose equivalent at 5 g/cm² regolith ÷ Chang'e-4 thin-detector dose equivalent)", "gameValue": 0.7, "source": "matthia2024", "note": "Derived: 0.723 mSv/day (Matthiä & Berger 2024, Fig. 4 data: Zenodo file figure3_and_figure4_data.xlsx, sheet ICRP_PHANTOM, '5g/cm^2 Regolith' SUM row, column dH/dt) ÷ 1.369 mSv/day = 0.53. Methodological approximation, not a physical shielding factor: modelled whole-body dose equivalent (all particles) vs measured thin-detector water dose equivalent (charged only); 0.53 = 0.86 shielding × 0.54 body self-shielding × 1.13 model/measurement offset. Game choice: 0.7 is a conservative modelling factor, not a published wall-shielding factor (GCR absorbed dose barely changes with shielding)." },
+    { "name": "Mission radiation threshold (didactic)", "value": 250, "unit": "mSv (game radiation-dose estimate)", "gameValue": 250, "source": "std3001", "note": "Game choice. Numerically equal to NASA-STD-3001 Rev C V1 4031 (250 mSv effective dose, design-reference SPE, a vehicle design requirement) and Table 4.8-1 (250 mGy-Eq to blood-forming organs over 30 days). It reproduces neither: NASA does not apply a cumulative mission abort threshold of 250. Career limit: 600 mSv effective dose (V1 4030)." },
+    { "name": "Strong solar storm (NOAA S3) dose inside a thin habitat", "value": 80, "unit": "mSv per event (source quantity: effective dose, ~5 g/cm² Al)", "gameValue": 80, "source": "dobynde2024", "note": "Published, read from a figure: 16–20 Jan 2005 event, ≈8 cSv behind 5 g/cm² Al (Fig. 3, preprint version, ±1 cSv). The real event lasted several days; the game compresses it into 2 days, so 40 mSv/day is an artificial distribution of the scenario dose over game time, not an observed daily rate. NOAA S3 is a proton-flux category, not a dose; this does not represent all S3 events." },
+    { "name": "Severe solar storm (NOAA S4) dose inside a thin habitat", "value": 220, "unit": "mSv per event (source quantity: effective dose, ~5 g/cm² Al)", "gameValue": 220, "source": "dobynde2024", "note": "Game choice within a published range: 188–264 mSv for the Jul 2000, Nov 2001 and Oct 2003 events behind 5 g/cm² Al (Fig. 3, preprint version); 154–312 mSv for the NASA reference SPE (Oct 1989) behind 5 g/cm² Al (Shavers et al. 2023). High-intensity S4 scenario, about 2× too high for 10 g/cm². Applied as 110 mSv/day × 2 days; real events last several days." },
+    { "name": "Shelter storm-dose factor", "value": 0.3, "unit": "fraction of storm dose remaining (≈70% reduction)", "gameValue": 0.3, "source": "matthia2024", "note": "Derived: red-bone-marrow dose for the Oct 1989 reference SPE (sum of the four Oct 1989 spectra) at 20 vs 5 g/cm² regolith = 53.9 / 181.9 mGy-Eq = 0.30 ± 0.004 (Fig. 3 data, Zenodo; same simulation, only the shell thickness differs; Gy-Eq ratio applied to an effective-dose-based storm value). Assumes the shelter adds ~15 g/cm² of regolith to a ~5 g/cm² habitat. The softer Aug 1972 spectrum gives 0.16. Not a property of every lunar shelter." },
+    { "name": "Water wall storm-dose factor", "value": 0.59, "unit": "fraction of storm dose remaining", "gameValue": 0.5, "source": "matthia2024", "note": "Derived: red-bone-marrow dose at 10 vs 5 g/cm² regolith = 0.59 (Oct 1989 reference) and 0.42 (Aug 1972). Game choice 0.5 lies in that range. Gameplay simplification: 100 kg of water gives 5–10 g/cm² over only 1–2 m², not a whole habitat wall." },
+    { "name": "Spacewalk (EVA) dose", "value": 0.46, "unit": "mSv per EVA (~8 h, GCR only)", "gameValue": 0.5, "source": "radiation", "note": "Derived: 1.37 mSv/day × 8/24 h = 0.46, rounded to 0.5 in the game. Approximation; ignores suit shielding and solar activity." },
+    { "name": "Li-ion battery specific energy", "value": 220, "unit": "Wh/kg (battery level)", "gameValue": 240, "source": "powerRoadmap", "note": "Published 2011 battery-level goals: 150 Wh/kg (High Energy) and 220 Wh/kg (Ultra High Energy). The game's 240 Wh/kg (60 kWh module = 250 kg) is ~9% above the 2011 goal. Limited validation: the original 2015 TA 3 roadmap is no longer online." },
     { "name": "Typical crew size", "value": 4, "unit": "astronauts", "gameValue": 4, "source": "artemis", "note": "Artemis crews are planned around four astronauts." }
   ],
   "lessons": {
@@ -118,7 +132,7 @@
     },
     "radiation": {
       "title": "Radiation dose exceeded the safety limit",
-      "what": "The crew's radiation dose passed 250 mSv, NASA's short-term safety limit. Mission control ordered an emergency return.",
+      "what": "The crew's radiation dose passed 250 mSv, this mission's safety limit (a game simplification based on NASA's short-term radiation values). Mission control ordered an emergency return.",
       "why": "The Moon has no magnetic field or thick atmosphere. During a solar storm, the dose inside a thin-walled habitat can rise to tens of mSv per day.",
       "principle": "Radiation protection = time + distance + shielding. You can't control the Sun, so you need mass (regolith, water) between the crew and the storm.",
       "alternatives": [

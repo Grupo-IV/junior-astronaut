@@ -86,7 +86,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
             </span>
             {report && <span>+{fmt(report.doseMsv, 1)} today</span>}
           </div>
-          <Why text="Cosmic rays give about 1.4 mSv per day on the Moon's surface. A solar storm can add dozens per day. NASA's short-term limit is 250 mSv; the white mark is the 100 mSv 'radiation safe' goal." />
+          <Why text="Cosmic rays give about 1.4 mSv per day on the Moon's surface. A solar storm can add dozens per day. This mission's limit is 250 mSv, a game simplification based on NASA's short-term radiation values; the white mark is the 100 mSv 'radiation safe' goal." />
         </li>
       </ul>
     </Panel>

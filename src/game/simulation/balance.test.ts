@@ -87,10 +87,10 @@ describe('balance: First Light at Shackleton (Cadet)', () => {
     expect(r.winRate).toBeGreaterThan(0.9)
   })
 
-  it('reckless play still often survives but takes a big dose', () => {
+  it('reckless play still often survives but takes a much bigger dose than careful play', () => {
     const r = stats(id, recommended, reckless)
     report('cadet / recommended / reckless', r)
-    expect(r.meanDose).toBeGreaterThan(100)
+    expect(r.meanDose).toBeGreaterThan(2 * stats(id, recommended, careful).meanDose)
   })
 
   it('skipping batteries fails in the terrain shadow', () => {

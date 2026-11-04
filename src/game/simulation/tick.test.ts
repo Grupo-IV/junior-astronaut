@@ -97,13 +97,13 @@ describe('solar storm decisions', () => {
   }
   const full = { solar_array: 2, battery: 2, radiation_shelter: 1, oxygen_tank: 3, water_crate: 2, food_crate: 3 }
 
-  it('the shelter blocks 90% of the storm dose', () => {
+  it('the shelter blocks 70% of the storm dose', () => {
     const storm = toStorm(full)
     const sheltered = advanceDay(content, resolveDecision(content, storm, 'shelter'))
     const exposed = advanceDay(content, resolveDecision(content, storm, 'continue'))
     const bg = content.environment.gcrDoseMsvPerDay * content.environment.habitatGcrFactor
-    expect(sheltered.lastReport!.doseMsv).toBeCloseTo(bg + 6)
-    expect(exposed.lastReport!.doseMsv).toBeCloseTo(bg + 60)
+    expect(sheltered.lastReport!.doseMsv).toBeCloseTo(bg + 12)
+    expect(exposed.lastReport!.doseMsv).toBeCloseTo(bg + 40)
   })
 
   it('shelter option is unavailable without a shelter', () => {
