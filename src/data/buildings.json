@@ -83,11 +83,11 @@
       "maxCount": 1,
       "powerDemandKwhPerDay": 4,
       "shedPriority": 4,
-      "stormDoseFactor": 0.1,
-      "summary": "Small room buried under bags of lunar soil (regolith). Blocks ~90% of solar-storm radiation.",
+      "stormDoseFactor": 0.3,
+      "summary": "Small room buried under bags of lunar soil (regolith). Blocks ~70% of solar-storm radiation.",
       "benefit": "Protects the crew during solar storms.",
       "tradeoff": "The heaviest item you can bring — and useless on a calm day.",
-      "science": { "text": "A few tens of g/cm² of regolith or water stop most solar-storm protons. Galactic cosmic rays are far harder to block.", "source": "radiation" }
+      "science": { "text": "About 15 g/cm² of extra regolith cuts the dose from a big solar storm by roughly 70–85%, depending on the storm. Galactic cosmic rays are far harder to block.", "source": "matthia2024" }
     }
   },
   "cargo": {
