@@ -2,48 +2,54 @@
  * @file
  * @brief Converts mission records into educational explanations and alternatives.
  */
-import type { DecisionRecord, GameContent, Lesson, MissionState } from '../../types/game'
+import type { DecisionRecord, FailureCause, GameContent, Message, MissionState } from '../../types/game'
 import { getMission } from '../content'
 import { batteryCapacityKwh } from '../buildings/buildings'
+import { msg, round } from '../messages'
 import { loadoutMass } from '../resources/loadout'
 
 export interface MissionAnalysis {
-  lesson: Lesson
+  /** Failure cause whose lesson applies, or null for the success lesson. */
+  lessonCause: FailureCause | null
   contributingDecisions: DecisionRecord[]
-  insights: string[]
+  insights: Message[]
 }
 
 export function analyzeMission(content: GameContent, state: MissionState): MissionAnalysis {
   const mission = getMission(content, state.missionId)
-  const cause = state.failure?.cause
-  const lesson = cause ? content.science.lessons[cause] : content.science.successLesson
+  const cause = state.failure?.cause ?? null
   const contributingDecisions = cause ? state.decisions.filter((d) => d.risks.includes(cause)) : []
-  const insights: string[] = []
+  const insights: Message[] = []
   const { stats, loadout } = state
 
-  const mass = loadoutMass(content, loadout)
-  insights.push(`You launched ${mass.toLocaleString('en-US')} kg of the ${mission.launchMassBudgetKg.toLocaleString('en-US')} kg the lander could carry.`)
+  insights.push(msg('analysis.mass', { mass: loadoutMass(content, loadout), budget: mission.launchMassBudgetKg }))
 
   const dose = state.crewDoseMsv
   const stormShare = dose > 0 ? Math.round((stats.doseStorm / dose) * 100) : 0
+  const doseArgs = { total: round(dose), background: round(stats.doseBackground), storm: round(stats.doseStorm), share: stormShare }
   insights.push(
-    `Radiation: ${dose.toFixed(0)} mSv total — ${stats.doseBackground.toFixed(0)} from cosmic rays, ${stats.doseStorm.toFixed(0)} from solar storms (${stormShare}%)${stats.doseEva > 0 ? `, ${stats.doseEva.toFixed(1)} from spacewalks` : ''}.`,
+    stats.doseEva > 0
+      ? msg('analysis.doseWithEva', { ...doseArgs, eva: round(stats.doseEva, 1) })
+      : msg('analysis.dose', doseArgs),
   )
-  if (stats.doseBlocked > 0) insights.push(`Shielding blocked ${stats.doseBlocked.toFixed(0)} mSv of storm radiation.`)
-  else if (stats.doseStorm > 0) insights.push('No shielding was used during solar storms — every storm particle reached the crew.')
+  if (stats.doseBlocked > 0) insights.push(msg('analysis.blocked', { blocked: round(stats.doseBlocked) }))
+  else if (stats.doseStorm > 0) insights.push(msg('analysis.noShielding'))
 
   if (stats.daysWithShedding > 0) {
     insights.push(
-      `Power was short on ${stats.daysWithShedding} day(s). Your ${loadout.battery} battery module(s) plus the habitat battery stored ${batteryCapacityKwh(content, loadout.battery)} kWh.`,
+      msg('analysis.shedding', {
+        count: stats.daysWithShedding,
+        batteries: loadout.battery,
+        capacity: batteryCapacityKwh(content, loadout.battery),
+      }),
     )
   }
-  if (stats.energyWastedKwh > 50) {
-    insights.push(`${stats.energyWastedKwh.toFixed(0)} kWh of solar energy was wasted because the batteries were already full.`)
-  }
-  if (stats.recycledWater > 0) insights.push(`The water recycler recovered ${stats.recycledWater.toFixed(0)} kg of water — ${Math.ceil(stats.recycledWater / 100)} water tank(s) you didn't have to launch.`)
-  else if (loadout.water_recycler === 0) insights.push('No water recycler: every drop the crew used was lost.')
-  if (stats.producedOxygen > 0) insights.push(`Your base produced ${stats.producedOxygen.toFixed(0)} kg of oxygen on the Moon.`)
-  if (stats.producedFood > 0) insights.push(`The greenhouse harvested ${stats.producedFood.toFixed(1)} kg of fresh food.`)
+  if (stats.energyWastedKwh > 50) insights.push(msg('analysis.wasted', { kwh: round(stats.energyWastedKwh) }))
+  if (stats.recycledWater > 0) {
+    insights.push(msg('analysis.recycled', { kg: round(stats.recycledWater), tanks: Math.ceil(stats.recycledWater / 100) }))
+  } else if (loadout.water_recycler === 0) insights.push(msg('analysis.noRecycler'))
+  if (stats.producedOxygen > 0) insights.push(msg('analysis.oxygen', { kg: round(stats.producedOxygen) }))
+  if (stats.producedFood > 0) insights.push(msg('analysis.food', { kg: round(stats.producedFood, 1) }))
 
-  return { lesson, contributingDecisions, insights }
+  return { lessonCause: cause, contributingDecisions, insights }
 }

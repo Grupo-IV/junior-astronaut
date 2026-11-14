@@ -34,7 +34,7 @@ function emptyReport(day: number): NonNullable<MissionState['lastReport']> {
 }
 
 function modifier(kind: Modifier['kind'], value: number): Modifier {
-  return { id: kind, kind, value, remainingDays: 2, label: kind, source: 'test' }
+  return { id: kind, kind, value, remainingDays: 2, label: { key: kind }, source: 'test' }
 }
 
 describe('missionCue', () => {

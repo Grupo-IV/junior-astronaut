@@ -1,7 +1,8 @@
 import { crewNeeds, gameContent, getMission, stateBatteryCapacity, SUPPLY_STOCKS, type SupplyStock } from '../../game'
+import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { fmt, Meter, Panel, StatusTag, type Level } from '../ui/ui'
-import { GlossaryText, Term } from '../ui/Term'
+import { GlossaryText } from '../ui/Term'
 import { STOCK_META } from './stockMeta'
 
 function supplyStatus(mission: MissionState, stock: SupplyStock) {
@@ -17,6 +18,7 @@ function supplyStatus(mission: MissionState, stock: SupplyStock) {
 }
 
 export function ResourcePanel({ mission }: { mission: MissionState }) {
+  const { t } = useI18n()
   const env = gameContent.environment
   const report = mission.lastReport
   const capacity = stateBatteryCapacity(gameContent, mission)
@@ -25,29 +27,31 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
   const doseLevel: Level = mission.crewDoseMsv >= env.doseWarningMsv ? 'critical' : mission.crewDoseMsv >= 100 ? 'warn' : 'good'
 
   return (
-    <Panel title="Resources" id="resources-title">
+    <Panel title={t('res.title')} id="resources-title">
       <ul className="space-y-3 p-3">
         {SUPPLY_STOCKS.map((stock) => {
           const s = supplyStatus(mission, stock)
           const meta = STOCK_META[stock]
+          const label = t(`stock.${stock}`)
+          const daysLeft = Math.min(s.daysLeft, 999)
           return (
             <li key={stock}>
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="font-semibold">
-                  <span aria-hidden>{meta.icon}</span> {meta.label}
+                  <span aria-hidden>{meta.icon}</span> {label}
                 </span>
                 <StatusTag level={s.level} />
               </div>
-              <Meter value={s.amount} max={s.capacity} color={meta.color} label={`${meta.label} stored`} />
-              <div className="mt-0.5 flex justify-between text-xs text-ink-3">
+              <Meter value={s.amount} max={s.capacity} color={meta.color} label={t('res.stored', { stock: label })} />
+              <div className="mt-0.5 flex justify-between gap-2 text-xs text-ink-3">
+                <span>{t('res.amount', { amount: fmt(s.amount, 1), capacity: fmt(s.capacity) })}</span>
                 <span>
-                  {fmt(s.amount, 1)} / {fmt(s.capacity)} kg
-                </span>
-                <span>
-                  {s.net > 0.01 ? `−${fmt(s.net, 1)}/day · ${fmt(Math.min(s.daysLeft, 999))} days left` : `+${fmt(-s.net, 1)}/day · stable`}
+                  {s.net > 0.01
+                    ? t('res.draining', { net: fmt(s.net, 1), count: Math.floor(daysLeft) })
+                    : t('res.stable', { net: fmt(-s.net, 1) })}
                 </span>
               </div>
-              <Why text={meta.why} />
+              <Why text={t(`stock.${stock}.why`)} />
             </li>
           )
         })}
@@ -55,39 +59,35 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
         <li>
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="font-semibold">
-              <span aria-hidden>🔋</span> Power
+              <span aria-hidden>🔋</span> {t('res.power')}
             </span>
-            <StatusTag level={powerLevel} word={report?.habitatUnpowered ? 'EMERGENCY' : undefined} />
+            <StatusTag level={powerLevel} word={report?.habitatUnpowered ? t('res.emergency') : undefined} />
           </div>
-          <Meter value={mission.stocks.energy} max={capacity} color="var(--color-warn)" label="Battery charge" />
-          <div className="mt-0.5 flex justify-between text-xs text-ink-3">
+          <Meter value={mission.stocks.energy} max={capacity} color="var(--color-warn)" label={t('res.batteryMeter')} />
+          <div className="mt-0.5 flex justify-between gap-2 text-xs text-ink-3">
             <span>
-              {fmt(mission.stocks.energy)} / {fmt(capacity)} <Term id="kwh">kWh</Term>
+              <GlossaryText text={t('res.energy', { energy: fmt(mission.stocks.energy), capacity: fmt(capacity) })} />
             </span>
-            {report && (
-              <span>
-                ☀ {fmt(report.generationKwh)} in · {fmt(report.servedKwh)} used
-              </span>
-            )}
+            {report && <span>{t('res.flow', { generated: fmt(report.generationKwh), used: fmt(report.servedKwh) })}</span>}
           </div>
-          <Why text="Solar arrays charge the batteries in sunlight. In shadow the base lives on stored energy. When it runs out, systems are switched off — greenhouse first, habitat last." />
+          <Why text={t('res.powerWhy')} />
         </li>
 
         <li>
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="font-semibold">
-              <span aria-hidden>☢️</span> Radiation dose
+              <span aria-hidden>☢️</span> {t('res.dose')}
             </span>
-            <StatusTag level={doseLevel} word={doseLevel === 'good' ? 'SAFE' : doseLevel === 'warn' ? 'ELEVATED' : 'DANGER'} />
+            <StatusTag level={doseLevel} word={doseLevel === 'good' ? t('res.doseSafe') : doseLevel === 'warn' ? t('res.doseElevated') : t('res.doseDanger')} />
           </div>
-          <Meter value={mission.crewDoseMsv} max={env.doseLimitMsv} color="var(--color-serious)" marker={100} label="Crew radiation dose" />
-          <div className="mt-0.5 flex justify-between text-xs text-ink-3">
+          <Meter value={mission.crewDoseMsv} max={env.doseLimitMsv} color="var(--color-serious)" marker={100} label={t('res.doseMeter')} />
+          <div className="mt-0.5 flex justify-between gap-2 text-xs text-ink-3">
             <span>
-              {fmt(mission.crewDoseMsv, 1)} / {env.doseLimitMsv} <Term id="msv">mSv</Term> limit
+              <GlossaryText text={t('res.doseLine', { dose: fmt(mission.crewDoseMsv, 1), limit: env.doseLimitMsv })} />
             </span>
-            {report && <span>+{fmt(report.doseMsv, 1)} today</span>}
+            {report && <span>{t('res.doseToday', { dose: fmt(report.doseMsv, 1) })}</span>}
           </div>
-          <Why text="Cosmic rays give about 1.4 mSv per day on the Moon's surface. A solar storm can add dozens per day. NASA's short-term limit is 250 mSv; the white mark is the 100 mSv 'radiation safe' goal." />
+          <Why text={t('res.doseWhy')} />
         </li>
       </ul>
     </Panel>
@@ -95,9 +95,10 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
 }
 
 function Why({ text }: { text: string }) {
+  const { t } = useI18n()
   return (
     <details className="text-xs text-ink-3">
-      <summary className="cursor-pointer text-accent-2/80 hover:text-accent-2">Why?</summary>
+      <summary className="cursor-pointer text-accent-2/80 hover:text-accent-2">{t('why')}</summary>
       <p className="mt-1">
         <GlossaryText text={text} />
       </p>

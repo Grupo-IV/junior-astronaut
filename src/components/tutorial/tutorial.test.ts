@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import outpost from '../hud/OutpostScreen.tsx?raw'
 import tutorialSource from './OutpostTutorial.tsx?raw'
 import stepsSource from './tutorialSteps.ts?raw'
-import { placeCard, stepBody, TOUR_PHASES, TOUR_STEPS, type Rect } from './tutorialSteps'
+import { LOCALES } from '../../i18n/locale'
+import { translate } from '../../i18n/translate'
+import { placeCard, TOUR_PHASES, TOUR_STEPS, type Rect } from './tutorialSteps'
+
+const ctx = { crew: 4, days: 14 }
 
 describe('tutorial steps', () => {
   it('points every step at a real element of the outpost screen', () => {
@@ -14,13 +18,16 @@ describe('tutorial steps', () => {
     expect([...new Set(phases)]).toEqual(TOUR_PHASES)
   })
 
-  it('stays short', () => {
+  it('stays short in every language', () => {
     expect(TOUR_STEPS.length).toBeLessThanOrEqual(8)
-    for (const step of TOUR_STEPS) expect(stepBody(step, { crew: 4, days: 14 }).length).toBeLessThan(220)
+    for (const { id } of LOCALES) {
+      for (const step of TOUR_STEPS) expect(translate(id, `tour.${step.id}.body`, ctx).length).toBeLessThan(240)
+    }
   })
 
   it('fills in the mission numbers', () => {
-    expect(stepBody(TOUR_STEPS[0], { crew: 4, days: 14 })).toContain('4 astronauts alive for 14 days')
+    expect(translate('en', 'tour.welcome.body', ctx)).toContain('4 astronauts alive for 14 days')
+    expect(translate('pt', 'tour.welcome.body', ctx)).toContain('4 astronautas vivos durante 14 dias')
   })
 
   it('ends by showing how to reopen it', () => {

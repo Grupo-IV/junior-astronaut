@@ -2,14 +2,17 @@
  * @file
  * @brief Calculates the mission rating from survival and resource performance.
  */
-import type { GameContent, MissionState } from '../../types/game'
+import type { GameContent, Message, MissionState } from '../../types/game'
+import { msg, round } from '../messages'
 import { getMission } from '../content'
 import { crewNeeds, SUPPLY_STOCKS } from '../resources/loadout'
 
+export type BadgeId = 'complete' | 'radiation' | 'margins'
+
 export interface Badge {
-  label: string
+  id: BadgeId
   earned: boolean
-  detail: string
+  detail: Message
 }
 
 export interface MissionScore {
@@ -35,19 +38,21 @@ export function scoreMission(content: GameContent, state: MissionState): Mission
 
   const badges: Badge[] = [
     {
-      label: 'Mission complete',
+      id: 'complete',
       earned: success,
-      detail: success ? `All ${mission.durationDays} days survived.` : `Mission ended on day ${state.failure?.day ?? state.day}.`,
+      detail: success
+        ? msg('badge.complete.success', { days: mission.durationDays })
+        : msg('badge.complete.failure', { day: state.failure?.day ?? state.day }),
     },
     {
-      label: 'Radiation safe',
+      id: 'radiation',
       earned: success && state.crewDoseMsv < SAFE_DOSE_MSV,
-      detail: `Crew dose ${state.crewDoseMsv.toFixed(0)} mSv (goal: under ${SAFE_DOSE_MSV}).`,
+      detail: msg('badge.radiation.detail', { dose: round(state.crewDoseMsv), goal: SAFE_DOSE_MSV }),
     },
     {
-      label: 'Healthy margins',
+      id: 'margins',
       earned: success && reserve >= HEALTHY_RESERVE_DAYS && state.stats.daysWithShedding === 0,
-      detail: `Lowest reserve: ${reserve.toFixed(1)} days of supply; ${state.stats.daysWithShedding} day(s) with power cuts (goal: ≥ ${HEALTHY_RESERVE_DAYS} days, no cuts).`,
+      detail: msg('badge.margins.detail', { reserve: round(reserve, 1), count: state.stats.daysWithShedding, goal: HEALTHY_RESERVE_DAYS }),
     },
   ]
   return { success, stars: badges.filter((b) => b.earned).length, badges, worstReserveDays: reserve }

@@ -7,8 +7,9 @@
  * outpost screen pauses its auto-play timer, and an overlay blocks clicks.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useI18n } from '../../i18n/useI18n'
 import { Button } from '../ui/ui'
-import { markTutorialSeen, placeCard, stepBody, TOUR_PHASES, TOUR_STEPS, type Rect, type TourContext } from './tutorialSteps'
+import { markTutorialSeen, placeCard, TOUR_PHASES, TOUR_STEPS, type Rect, type TourContext } from './tutorialSteps'
 
 const PAD = 6
 
@@ -18,6 +19,7 @@ export function OutpostTutorial({ open, onClose, context }: { open: boolean; onC
 }
 
 function TourDialog({ onClose, context }: { onClose: () => void; context: TourContext }) {
+  const { t } = useI18n()
   const [index, setIndex] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
@@ -129,45 +131,45 @@ function TourDialog({ onClose, context }: { onClose: () => void; context: TourCo
         style={{ top: pos?.top ?? 16, left: pos?.left ?? 16 }}
       >
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-          <ol className="flex items-center gap-1 text-[10px] font-bold tracking-widest" aria-label="Mission loop">
+          <ol className="flex items-center gap-1 text-[10px] font-bold tracking-widest" aria-label={t('tour.loop')}>
             {TOUR_PHASES.map((phase, i) => (
               <li key={phase} className="flex items-center gap-1">
                 <span
                   className={`rounded-full px-2 py-0.5 ${phase === step.phase ? 'bg-accent text-space' : 'text-ink-3'}`}
                   aria-current={phase === step.phase ? 'step' : undefined}
                 >
-                  {phase}
+                  {t(`tour.phase.${phase}`)}
                 </span>
                 {i < TOUR_PHASES.length - 1 && <span aria-hidden className="text-ink-3">→</span>}
               </li>
             ))}
           </ol>
           <span className="text-xs text-ink-3">
-            {index + 1} / {TOUR_STEPS.length}
+            {t('tour.progress', { step: index + 1, total: TOUR_STEPS.length })}
           </span>
         </div>
 
         <div ref={contentRef} tabIndex={-1} className="px-4 pt-3 outline-none">
           <h2 id="tour-title" className="font-display text-lg font-bold">
-            {step.title}
+            {t(`tour.${step.id}.title`)}
           </h2>
           <p id="tour-body" className="mt-1 text-sm text-ink-2">
-            {stepBody(step, context)}
+            {t(`tour.${step.id}.body`, { crew: context.crew, days: context.days })}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 px-4 pt-3 pb-2">
           <Button variant="ghost" className="mr-auto px-2" onClick={finish}>
-            {last ? 'Close' : 'Skip tutorial'}
+            {last ? t('tour.close') : t('tour.skip')}
           </Button>
           <Button onClick={back} disabled={index === 0}>
-            ← Back
+            {t('tour.back')}
           </Button>
           <Button variant="primary" onClick={next}>
-            {last ? 'Got it' : 'Next →'}
+            {last ? t('tour.done') : t('tour.next')}
           </Button>
         </div>
-        <p className="px-4 pb-3 text-[11px] text-ink-3">Keys: ← → to move · Enter to continue · Esc to close</p>
+        <p className="px-4 pb-3 text-[11px] text-ink-3">{t('tour.keys')}</p>
       </div>
     </div>
   )

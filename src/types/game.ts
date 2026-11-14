@@ -22,6 +22,25 @@ export type LoadoutItemId = BuildingId | CargoId
 
 export type Loadout = Record<LoadoutItemId, number>
 
+/**
+ * Language-neutral text produced by the engine. The UI translates it.
+ * - `key` is a message key from the i18n dictionaries, or `@<path>` to show a
+ *   text from the game content (e.g. `@events.solar_storm.title`).
+ * - `args` fill `{placeholders}`; refs are translated too.
+ */
+export type MessageArg =
+  | string
+  | number
+  | { ref: 'content'; path: string }
+  | { ref: 'building'; id: BuildingId }
+  | { ref: 'buildings'; ids: BuildingId[] }
+  | { ref: 'stock'; id: StockId }
+
+export interface Message {
+  key: string
+  args?: Record<string, MessageArg>
+}
+
 export interface ScienceNote {
   text: string
   source: string
@@ -204,7 +223,7 @@ export interface Modifier {
   value: number
   remainingDays: number
   target?: BuildingId
-  label: string
+  label: Message
   source: string
 }
 
@@ -213,7 +232,7 @@ export type LogKind = 'info' | 'success' | 'warning' | 'danger' | 'science'
 export interface LogEntry {
   day: number
   kind: LogKind
-  text: string
+  msg: Message
 }
 
 export interface PendingEvent {
@@ -226,11 +245,9 @@ export interface PendingEvent {
 export interface DecisionRecord {
   day: number
   eventId: string
-  eventTitle: string
   optionId: string
-  optionLabel: string
   risks: RiskTag[]
-  notes: string[]
+  notes: Message[]
 }
 
 export interface DaySnapshot {

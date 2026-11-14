@@ -55,3 +55,24 @@ The alarm classes follow the idea behind the International Space Station's Cauti
 The game has no audio files. All sounds are generated in the browser by [`src/audio/engine.ts`](src/audio/engine.ts) with the standard [Web Audio API](https://developer.mozilla.org/docs/Web/API/Web_Audio_API), using oscillators, filtered noise and gain envelopes. They are original work by Grupo 4 and use the same licence as the rest of the code (see [LICENSE](LICENSE)). There are no third-party sound assets to credit.
 
 If you add recorded audio later, put it in `public/audio/` and list every file here with its author, source URL and licence. Use only public-domain or CC0/CC BY sounds; NASA audio is generally not copyrighted, but check NASA's media usage guidelines before you use it.
+
+## Languages
+
+The game is available in **Portuguese (pt-PT)** and **English**. It picks the browser language the first time it opens. You can switch with the **PT / EN** buttons on the main menu, the mission screens and the outpost header, and the game remembers your choice. Switching language changes only the words: the simulation, its numbers and its rules stay the same.
+
+Where texts live:
+
+| Text | File |
+| --- | --- |
+| Interface (buttons, labels, tooltips, errors, tutorial) and engine messages (mission log, decision notes, analysis) | [`src/i18n/messages/en.ts`](src/i18n/messages/en.ts) and [`pt.ts`](src/i18n/messages/pt.ts) |
+| Game content (missions, structures, events, lessons, glossary) | English in [`src/data/*.json`](src/data), Portuguese in [`src/i18n/content/pt.json`](src/i18n/content/pt.json) |
+
+To add or change a text:
+
+1. Add the key to `en.ts`, then the same key to `pt.ts`. TypeScript refuses a dictionary with a missing or extra key.
+2. In a component, use `const { t } = useI18n()` and `t('my.key', { value })`. Use `{placeholders}` and keep word order inside the translation, never by joining strings in code. For plurals, add `my.key_one` and `my.key_other` and pass `count`.
+3. The simulation engine never builds sentences. It returns `Message` objects (`{ key, args }`) that the interface translates.
+
+Content texts are addressed by path, for example `events.solar_storm.options.shelter.label`. When you add a text field to a JSON file, `npm test` lists the paths that `pt.json` is missing.
+
+`npm test` also checks that every key exists in both languages with the same placeholders, that no component contains hard-coded visible text, that every screen renders in Portuguese without leftover keys, and that the same mission gives the same result in both languages.

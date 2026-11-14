@@ -17,62 +17,24 @@ export interface TourContext {
   days: number
 }
 
+/** Texts live in the i18n dictionaries as `tour.<id>.title` and `tour.<id>.body`. */
+export type TourStepId = 'welcome' | 'resources' | 'systems' | 'viewport' | 'time' | 'log' | 'help'
+
 export interface TourStep {
+  id: TourStepId
   target: TourTarget
   phase: TourPhase | null
-  title: string
-  body: string | ((ctx: TourContext) => string)
 }
 
 export const TOUR_STEPS: TourStep[] = [
-  {
-    target: 'mission-clock',
-    phase: null,
-    title: 'Welcome to your outpost',
-    body: ({ crew, days }) =>
-      `Keep ${crew} astronauts alive for ${days} days. Every day follows the same loop: PLAN your systems, OPERATE the base, DECIDE when something goes wrong.`,
-  },
-  {
-    target: 'resources',
-    phase: 'PLAN',
-    title: 'Watch your resources',
-    body: 'Water, oxygen, food and power. Each shows how many days are left at today’s rate. LOW and CRITICAL tags tell you where to act first.',
-  },
-  {
-    target: 'systems',
-    phase: 'PLAN',
-    title: 'Run your structures',
-    body: 'Select a structure to switch it off to save power, or to repair it with a spare kit. When power runs short, the base switches off the least important systems first.',
-  },
-  {
-    target: 'viewport',
-    phase: 'PLAN',
-    title: 'Your base on the Moon',
-    body: 'The same structures, in 3D. Click one to select it. Lights, shadows and storm particles show what the panels tell you.',
-  },
-  {
-    target: 'time-controls',
-    phase: 'OPERATE',
-    title: 'Advance the days',
-    body: 'Next day runs one Earth day. Play runs days on their own, and the speed button makes them go faster. Check tomorrow’s sunlight above before a long shadow.',
-  },
-  {
-    target: 'mission-log',
-    phase: 'DECIDE',
-    title: 'Events and decisions',
-    body: 'Storms, leaks and failures stop the clock and ask for a decision. Every option has a cost. The log records what happened and why.',
-  },
-  {
-    target: 'help',
-    phase: null,
-    title: 'Ready, Commander',
-    body: 'You can open this introduction again here at any time. Good luck!',
-  },
+  { id: 'welcome', target: 'mission-clock', phase: null },
+  { id: 'resources', target: 'resources', phase: 'PLAN' },
+  { id: 'systems', target: 'systems', phase: 'PLAN' },
+  { id: 'viewport', target: 'viewport', phase: 'PLAN' },
+  { id: 'time', target: 'time-controls', phase: 'OPERATE' },
+  { id: 'log', target: 'mission-log', phase: 'DECIDE' },
+  { id: 'help', target: 'help', phase: null },
 ]
-
-export function stepBody(step: TourStep, ctx: TourContext): string {
-  return typeof step.body === 'function' ? step.body(ctx) : step.body
-}
 
 // ------------------------------------------------------------------ placement
 
