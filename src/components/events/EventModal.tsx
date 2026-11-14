@@ -8,6 +8,7 @@ import { eventDef } from '../../game'
 import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { DecisionOptions } from '../decisions/DecisionOptions'
+import { Icon } from '../ui/Icon'
 import { SourceLink } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 
@@ -24,11 +25,17 @@ export function EventModal({ mission }: { mission: MissionState }) {
 
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center overflow-y-auto bg-black/60 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-      <div role="dialog" aria-modal="true" aria-labelledby="event-title" className="my-auto w-full max-w-3xl rounded-2xl border border-critical/40 bg-panel shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="event-title" className="hud-frame my-auto w-full max-w-3xl rounded-2xl shadow-[0_0_60px_-10px_rgba(255,90,90,0.45)]">
         <header className="rounded-t-2xl border-b border-line bg-critical/10 px-5 py-4">
-          <p className="text-xs font-bold tracking-widest text-critical uppercase">{t('event.kicker', { day: pending.day })}</p>
+          <p className="flex items-center gap-2 text-xs font-bold tracking-widest text-critical uppercase">
+            <span className="relative inline-flex">
+              <Icon name="warning" />
+              <span className="animate-pulse-ring absolute inset-0 rounded-full border border-critical" />
+            </span>
+            {t('event.kicker', { day: pending.day })}
+          </p>
           <h2 id="event-title" ref={headingRef} tabIndex={-1} className="mt-1 font-display text-2xl font-bold outline-none">
-            <span aria-hidden>{def.icon}</span> {def.title}
+            <Icon name={def.icon} className="mr-1 text-critical" /> {def.title}
           </h2>
           {variant && <p className="text-sm text-serious">{variant.label}</p>}
         </header>

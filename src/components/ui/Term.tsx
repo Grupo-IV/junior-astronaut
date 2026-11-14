@@ -5,6 +5,7 @@
 import { Fragment, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import { splitGlossary, type GlossaryId } from './glossary'
+import { Icon } from './Icon'
 
 /** Popover API (Chrome 114, Firefox 125, Safari 17) is newer than the build target, so older browsers get a fallback. */
 const SUPPORTS_POPOVER = typeof HTMLElement !== 'undefined' && Object.prototype.hasOwnProperty.call(HTMLElement.prototype, 'popover')
@@ -98,8 +99,8 @@ export function Term({ id, children }: { id: GlossaryId; children: ReactNode }) 
         className="cursor-help rounded-sm text-inherit underline decoration-accent-2/70 decoration-dotted underline-offset-2 hover:decoration-accent-2"
       >
         {children}
-        <sup aria-hidden className="ml-px text-[0.65em] text-accent-2">
-          ⓘ
+        <sup aria-hidden className="ml-px text-[0.7em] text-accent-2">
+          <Icon name="info" />
         </sup>
         <span className="sr-only"> {t('term.what')}</span>
       </button>

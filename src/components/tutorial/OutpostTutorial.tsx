@@ -8,6 +8,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useI18n } from '../../i18n/useI18n'
+import { Icon } from '../ui/Icon'
 import { Button } from '../ui/ui'
 import { markTutorialSeen, placeCard, TOUR_PHASES, TOUR_STEPS, type Rect, type TourContext } from './tutorialSteps'
 
@@ -127,7 +128,7 @@ function TourDialog({ onClose, context }: { onClose: () => void; context: TourCo
         aria-modal="true"
         aria-labelledby="tour-title"
         aria-describedby="tour-body"
-        className={`fixed w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-accent/50 bg-panel shadow-2xl motion-safe:transition-[top,left] motion-safe:duration-300 ${pos ? '' : 'invisible'}`}
+        className={`hud-frame fixed w-[min(22rem,calc(100vw-2rem))] rounded-2xl shadow-2xl motion-safe:transition-[top,left] motion-safe:duration-300 ${pos ? '' : 'invisible'}`}
         style={{ top: pos?.top ?? 16, left: pos?.left ?? 16 }}
       >
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
@@ -140,7 +141,7 @@ function TourDialog({ onClose, context }: { onClose: () => void; context: TourCo
                 >
                   {t(`tour.phase.${phase}`)}
                 </span>
-                {i < TOUR_PHASES.length - 1 && <span aria-hidden className="text-ink-3">→</span>}
+                {i < TOUR_PHASES.length - 1 && <Icon name="chevronRight" className="text-ink-3" />}
               </li>
             ))}
           </ol>
@@ -163,10 +164,10 @@ function TourDialog({ onClose, context }: { onClose: () => void; context: TourCo
             {last ? t('tour.close') : t('tour.skip')}
           </Button>
           <Button onClick={back} disabled={index === 0}>
-            {t('tour.back')}
+            <Icon name="arrowLeft" /> {t('tour.back')}
           </Button>
           <Button variant="primary" onClick={next}>
-            {last ? t('tour.done') : t('tour.next')}
+            {last ? t('tour.done') : t('tour.next')} {!last && <Icon name="arrowRight" />}
           </Button>
         </div>
         <p className="px-4 pb-3 text-[11px] text-ink-3">{t('tour.keys')}</p>

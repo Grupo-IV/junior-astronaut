@@ -293,6 +293,8 @@ export type MissionStatus = 'running' | 'awaiting-decision' | 'success' | 'failu
 
 export interface MissionState {
   missionId: string
+  /** Crew rank (difficulty mode) the mission was launched with. See game/ranks.ts. */
+  rank: import('../game/ranks').RankId
   seed: number
   rng: number
   day: number

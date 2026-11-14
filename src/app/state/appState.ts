@@ -2,7 +2,7 @@
  * @file
  * @brief Application navigation state and actions forwarded to the simulation engine.
  */
-import type { Loadout, MissionState } from '../../types/game'
+import type { GameContent, Loadout, MissionState } from '../../types/game'
 import {
   advanceDay,
   createMissionState,
@@ -14,11 +14,14 @@ import {
   toLoadout,
   toggleBuilding,
 } from '../../game'
+import { contentForRank, DEFAULT_RANK, isRankId, type RankId } from '../../game/ranks'
 
 export type Screen = 'menu' | 'select' | 'briefing' | 'setup' | 'outpost' | 'result'
 
 export interface AppState {
   screen: Screen
+  /** Rank chosen for the next mission. A running mission keeps the rank it was launched with. */
+  rank: RankId
   missionId: string
   loadout: Loadout
   mission: MissionState | null
@@ -27,6 +30,7 @@ export interface AppState {
 
 export type AppAction =
   | { type: 'navigate'; screen: Screen }
+  | { type: 'setRank'; rank: RankId }
   | { type: 'chooseMission'; missionId: string }
   | { type: 'setLoadout'; loadout: Loadout }
   | { type: 'launch' }
@@ -37,9 +41,39 @@ export type AppAction =
   | { type: 'repairBuilding'; uid: string }
   | { type: 'retry' }
 
+const RANK_KEY = 'junior-astronaut:rank'
+
+function savedRank(): RankId {
+  try {
+    const v = globalThis.localStorage?.getItem(RANK_KEY)
+    if (isRankId(v)) return v
+  } catch {
+    // Storage blocked: start as a cadet.
+  }
+  return DEFAULT_RANK
+}
+
+function saveRank(rank: RankId) {
+  try {
+    globalThis.localStorage?.setItem(RANK_KEY, rank)
+  } catch {
+    // The choice still applies for this session.
+  }
+}
+
 export function initialAppState(): AppState {
   const first = gameContent.missions[0]
-  return { screen: 'menu', missionId: first.id, loadout: toLoadout(first.recommendedLoadout), mission: null, consequenceIndex: null }
+  return { screen: 'menu', rank: savedRank(), missionId: first.id, loadout: toLoadout(first.recommendedLoadout), mission: null, consequenceIndex: null }
+}
+
+/** Rules for planning the next mission (the rank currently selected). */
+export function planRules(state: Pick<AppState, 'rank'>): GameContent {
+  return contentForRank(gameContent, state.rank)
+}
+
+/** Rules a launched mission runs with (the rank it was launched with). */
+export function missionRules(mission: Pick<MissionState, 'rank'>): GameContent {
+  return contentForRank(gameContent, mission.rank)
 }
 
 function finished(m: MissionState) {
@@ -47,12 +81,14 @@ function finished(m: MissionState) {
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
-  const content = gameContent
   switch (action.type) {
     case 'navigate':
       return { ...state, screen: action.screen }
+    case 'setRank':
+      saveRank(action.rank)
+      return { ...state, rank: action.rank }
     case 'chooseMission': {
-      const mission = getMission(content, action.missionId)
+      const mission = getMission(gameContent, action.missionId)
       return { ...state, missionId: mission.id, loadout: toLoadout({}), screen: 'briefing' }
     }
     case 'setLoadout':
@@ -60,7 +96,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'launch':
       return {
         ...state,
-        mission: createMissionState(content, state.missionId, state.loadout, newSeed()),
+        mission: createMissionState(planRules(state), state.missionId, state.loadout, newSeed(), state.rank),
         consequenceIndex: null,
         screen: 'outpost',
       }
@@ -68,21 +104,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, mission: null, consequenceIndex: null, screen: 'setup' }
     case 'advanceDay': {
       if (!state.mission || state.consequenceIndex !== null) return state
-      const mission = advanceDay(content, state.mission)
-      return { ...state, mission }
+      return { ...state, mission: advanceDay(missionRules(state.mission), state.mission) }
     }
     case 'decide': {
       if (!state.mission) return state
-      const mission = resolveDecision(content, state.mission, action.optionId)
+      const mission = resolveDecision(missionRules(state.mission), state.mission, action.optionId)
       if (mission === state.mission) return state
       return { ...state, mission, consequenceIndex: mission.decisions.length - 1 }
     }
     case 'dismissConsequence':
       return { ...state, consequenceIndex: null }
     case 'toggleBuilding':
-      return state.mission ? { ...state, mission: toggleBuilding(content, state.mission, action.uid) } : state
+      return state.mission ? { ...state, mission: toggleBuilding(missionRules(state.mission), state.mission, action.uid) } : state
     case 'repairBuilding':
-      return state.mission ? { ...state, mission: repairBuilding(content, state.mission, action.uid) } : state
+      return state.mission ? { ...state, mission: repairBuilding(missionRules(state.mission), state.mission, action.uid) } : state
   }
 }
 

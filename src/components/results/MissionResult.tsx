@@ -7,7 +7,10 @@ import { analyzeMission, crewNeeds, gameContent, getMission, scoreMission, state
 import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { STOCK_META } from '../resources/stockMeta'
+import { RankInsignia } from '../art/RankInsignia'
+import { Icon } from '../ui/Icon'
 import { LanguageToggle } from '../ui/LanguageToggle'
+import { SpaceBackdrop } from '../ui/SpaceBackdrop'
 import { Button, fmt, Panel, Stars, StatusTag } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 import { LineChart } from './LineChart'
@@ -37,13 +40,17 @@ export function MissionResult({ mission }: { mission: MissionState }) {
     : t('result.consequenceFailure', { day: mission.failure!.day, days: def.durationDays })
 
   return (
-    <main className="starfield min-h-full px-4 py-8">
+    <main className="relative min-h-full px-4 py-8 sm:px-8">
+      <SpaceBackdrop />
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex justify-end">
           <LanguageToggle />
         </div>
-        <header className={`rounded-2xl border p-6 text-center ${success ? 'border-good/40 bg-good/10' : 'border-critical/40 bg-critical/10'}`}>
+        <header className={`hud-frame rounded-2xl p-6 text-center ${success ? 'shadow-[0_0_60px_-12px_rgba(61,220,132,0.5)]' : 'shadow-[0_0_60px_-12px_rgba(255,90,90,0.5)]'}`}>
           <p className="text-xs font-bold tracking-widest text-ink-3 uppercase">{t('result.kicker', { mission: text.name })}</p>
+          <p className="mt-2 inline-flex items-center gap-2 text-sm text-ink-2">
+            <RankInsignia rank={mission.rank} size={24} /> {t('result.rank', { rank: t(`rank.${mission.rank}.name`) })}
+          </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
           <div className="mt-3">
             <Stars count={score.stars} />
@@ -87,7 +94,7 @@ export function MissionResult({ mission }: { mission: MissionState }) {
                     {contributed && <StatusTag level="critical" word={t('result.putAtRisk', { cause: t(`cause.${mission.failure!.cause}`) })} />}
                     {d.notes.map((n, j) => (
                       <p key={j} className="text-xs text-ink-3">
-                        → {m(n)}
+                        <Icon name="chevronRight" /> {m(n)}
                       </p>
                     ))}
                   </li>
@@ -99,7 +106,7 @@ export function MissionResult({ mission }: { mission: MissionState }) {
             <ul className="space-y-2 p-4 text-sm text-ink-2">
               {analysis.insights.map((insight, i) => (
                 <li key={i} className="flex gap-2">
-                  <span aria-hidden className="text-accent-2">▸</span>
+                  <Icon name="chevronRight" className="mt-0.5 text-accent-2" />
                   <span>
                     <GlossaryText text={m(insight)} />
                   </span>
@@ -155,7 +162,7 @@ export function MissionResult({ mission }: { mission: MissionState }) {
 
         <div className="flex flex-wrap justify-center gap-3 pb-8">
           <Button variant="primary" className="px-6 py-3 text-base" onClick={() => dispatch({ type: 'retry' })}>
-            {t('result.retry')}
+            <Icon name="retry" /> {t('result.retry')}
           </Button>
           <Button onClick={() => dispatch({ type: 'navigate', screen: 'select' })}>{t('result.another')}</Button>
           <Button variant="ghost" onClick={() => dispatch({ type: 'navigate', screen: 'menu' })}>

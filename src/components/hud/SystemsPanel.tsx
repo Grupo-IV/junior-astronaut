@@ -8,6 +8,7 @@ import type { I18n } from '../../i18n/useI18n'
 import { useI18n } from '../../i18n/useI18n'
 import type { BuildingInstance, MissionState } from '../../types/game'
 import { Button, Panel, SourceLink, StatusTag, type Level } from '../ui/ui'
+import { Icon } from '../ui/Icon'
 import { GlossaryText } from '../ui/Term'
 
 function statusOf(t: I18n['t'], mission: MissionState, b: BuildingInstance): { level: Level; word: string } {
@@ -30,11 +31,11 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
   const unpowered = mission.lastReport?.habitatUnpowered
 
   return (
-    <Panel title={t('sys.title', { count: mission.spareParts })} id="systems-title">
+    <Panel title={t('sys.title', { count: mission.spareParts })} id="systems-title" icon="toolbox">
       <div className="p-2">
         <div className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm">
           <span>
-            <span aria-hidden>🏠</span> {t('sys.habitat')}{' '}
+            <Icon name="habitat" className="text-hud" /> {t('sys.habitat')}{' '}
             <span className="text-xs text-ink-3">
               <GlossaryText text={t('sys.perDay', { kwh: gameContent.environment.habitat.powerDemandKwhPerDay })} />
             </span>
@@ -56,7 +57,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
                   className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-panel-2 ${isSel ? 'bg-panel-2 ring-1 ring-accent-2' : ''}`}
                 >
                   <span>
-                    <span aria-hidden>{def.icon}</span> {def.name}
+                    <Icon name={def.icon} className="text-hud" /> {def.name}
                     {mission.buildings.filter((x) => x.defId === b.defId).length > 1 ? ` #${b.uid.split('-').at(-1)}` : ''}
                   </span>
                   <StatusTag level={st.level} word={st.word} />
@@ -76,7 +77,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
             return (
               <>
                 <p className="font-display text-base font-bold">
-                  {def.icon} {def.name}
+                  <Icon name={def.icon} className="text-hud" /> {def.name}
                 </p>
                 <p className="mt-1 text-ink-2">
                   <GlossaryText text={def.summary} />
@@ -96,17 +97,19 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
                 <div className="mt-3 flex flex-wrap gap-2">
                   {kwh > 0 && (
                     <Button disabled={!canAct} onClick={() => dispatch({ type: 'toggleBuilding', uid: selected.uid })}>
-                      {selected.enabled ? t('sys.switchOff', { kwh }) : t('sys.switchOn', { kwh })}
+                      <Icon name="power" /> {selected.enabled ? t('sys.switchOff', { kwh }) : t('sys.switchOn', { kwh })}
                     </Button>
                   )}
                   {selected.status === 'failed' && (
                     <Button variant="primary" disabled={!canAct || !repair.possible} onClick={() => dispatch({ type: 'repairBuilding', uid: selected.uid })}>
-                      {repair.withSpare ? t('sys.repairSpare') : t('sys.repairImprovised')}
+                      <Icon name={repair.withSpare ? 'toolbox' : 'wrench'} /> {repair.withSpare ? t('sys.repairSpare') : t('sys.repairImprovised')}
                     </Button>
                   )}
                 </div>
                 {selected.defId === 'greenhouse' && selected.enabled && selected.growth > 0 && (
-                  <p className="mt-2 text-xs text-warn">{t('sys.greenhouseWarning')}</p>
+                  <p className="mt-2 flex gap-1.5 text-xs text-warn">
+                    <Icon name="warning" /> {t('sys.greenhouseWarning')}
+                  </p>
                 )}
                 {repair.reason && <p className="mt-2 text-xs text-ink-3">{m(repair.reason)}</p>}
               </>

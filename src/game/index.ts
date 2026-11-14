@@ -26,4 +26,5 @@ export {
   type LoadoutCheck,
   type SupplyStock,
 } from './resources/loadout'
+export { RANKS, RANK_IDS, contentForRank, recommendedRank, type RankId, type RankDef } from './ranks'
 export { stateBatteryCapacity, wantsToRun, isGreenhouseProductive } from './buildings/buildings'

@@ -2,6 +2,7 @@ import { crewNeeds, gameContent, getMission, stateBatteryCapacity, SUPPLY_STOCKS
 import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { fmt, Meter, Panel, StatusTag, type Level } from '../ui/ui'
+import { Icon } from '../ui/Icon'
 import { GlossaryText } from '../ui/Term'
 import { STOCK_META } from './stockMeta'
 
@@ -27,7 +28,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
   const doseLevel: Level = mission.crewDoseMsv >= env.doseWarningMsv ? 'critical' : mission.crewDoseMsv >= 100 ? 'warn' : 'good'
 
   return (
-    <Panel title={t('res.title')} id="resources-title">
+    <Panel title={t('res.title')} id="resources-title" icon="chart">
       <ul className="space-y-3 p-3">
         {SUPPLY_STOCKS.map((stock) => {
           const s = supplyStatus(mission, stock)
@@ -38,7 +39,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
             <li key={stock}>
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="font-semibold">
-                  <span aria-hidden>{meta.icon}</span> {label}
+                  <Icon name={meta.icon} style={{ color: meta.color }} /> {label}
                 </span>
                 <StatusTag level={s.level} />
               </div>
@@ -59,7 +60,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
         <li>
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="font-semibold">
-              <span aria-hidden>🔋</span> {t('res.power')}
+              <Icon name="battery" className="text-warn" /> {t('res.power')}
             </span>
             <StatusTag level={powerLevel} word={report?.habitatUnpowered ? t('res.emergency') : undefined} />
           </div>
@@ -68,7 +69,11 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
             <span>
               <GlossaryText text={t('res.energy', { energy: fmt(mission.stocks.energy), capacity: fmt(capacity) })} />
             </span>
-            {report && <span>{t('res.flow', { generated: fmt(report.generationKwh), used: fmt(report.servedKwh) })}</span>}
+            {report && (
+              <span className="flex items-center gap-1">
+                <Icon name="sun" className="text-warn" /> {t('res.flow', { generated: fmt(report.generationKwh), used: fmt(report.servedKwh) })}
+              </span>
+            )}
           </div>
           <Why text={t('res.powerWhy')} />
         </li>
@@ -76,7 +81,7 @@ export function ResourcePanel({ mission }: { mission: MissionState }) {
         <li>
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="font-semibold">
-              <span aria-hidden>☢️</span> {t('res.dose')}
+              <Icon name="radiation" className="text-serious" /> {t('res.dose')}
             </span>
             <StatusTag level={doseLevel} word={doseLevel === 'good' ? t('res.doseSafe') : doseLevel === 'warn' ? t('res.doseElevated') : t('res.doseDanger')} />
           </div>

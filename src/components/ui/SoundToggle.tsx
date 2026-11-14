@@ -4,6 +4,7 @@
  */
 import { setMuted, useMuted } from '../../audio/settings'
 import { useI18n } from '../../i18n/useI18n'
+import { Icon } from './Icon'
 import { Button } from './ui'
 
 export function SoundToggle({ className = '' }: { className?: string }) {
@@ -17,8 +18,8 @@ export function SoundToggle({ className = '' }: { className?: string }) {
       title={muted ? t('sound.offTitle') : t('sound.onTitle')}
       onClick={() => setMuted(!muted)}
     >
-      <span aria-hidden>{muted ? '🔇' : '🔊'}</span>
-      {muted ? t('sound.off') : t('sound.on')}
+      <Icon name={muted ? 'volumeOff' : 'volume'} />
+      <span className="hidden sm:inline">{muted ? t('sound.off') : t('sound.on')}</span>
     </Button>
   )
 }

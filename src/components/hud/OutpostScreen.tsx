@@ -14,6 +14,8 @@ import { EventModal } from '../events/EventModal'
 import { ResourcePanel } from '../resources/ResourcePanel'
 import { OutpostTutorial } from '../tutorial/OutpostTutorial'
 import { hasSeenTutorial } from '../tutorial/tutorialSteps'
+import { RankInsignia } from '../art/RankInsignia'
+import { Icon } from '../ui/Icon'
 import { LanguageToggle } from '../ui/LanguageToggle'
 import { Rich } from '../ui/Rich'
 import { SoundToggle } from '../ui/SoundToggle'
@@ -72,9 +74,14 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
       </div>
 
       <div className="flex flex-col gap-3 p-3 lg:pointer-events-none lg:absolute lg:inset-0 lg:grid lg:grid-cols-[300px_1fr_320px] lg:grid-rows-[auto_1fr_auto]">
-        <header className="pointer-events-auto order-first flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel/90 px-4 py-2 backdrop-blur lg:col-span-3">
+        <header className="hud-frame pointer-events-auto order-first flex flex-wrap items-center gap-3 rounded-xl px-4 py-2 backdrop-blur-md lg:col-span-3">
           <div data-tour="mission-clock" className="mr-auto">
-            <p className="font-display text-lg leading-tight font-bold">{text.name}</p>
+            <p className="flex items-center gap-2 font-display text-lg leading-tight font-bold">
+              <span title={t(`rank.${mission.rank}.name`)}>
+                <RankInsignia rank={mission.rank} size={22} />
+              </span>
+              {text.name}
+            </p>
             <p className="text-xs text-ink-3">
               <Rich
                 text={t('outpost.dayLine', {
@@ -87,21 +94,22 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
               />
             </p>
             <div className="mt-1 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-space" aria-hidden>
-              <div className="h-full bg-accent transition-[width]" style={{ width: `${(mission.day / def.durationDays) * 100}%` }} />
+              <div className="h-full bg-gradient-to-r from-hud to-accent transition-[width]" style={{ width: `${(mission.day / def.durationDays) * 100}%` }} />
             </div>
           </div>
           {storm && (
             <p className="rounded-lg border border-critical/50 bg-critical/15 px-3 py-1 text-sm font-semibold text-critical" role="status">
+              <Icon name="radiation" className="mr-1.5" />
               {t('outpost.storm', { dose: fmt(stormDoseRate(mission), 1), count: storm.remainingDays })}
             </p>
           )}
           {!finished ? (
             <div data-tour="time-controls" className="flex items-center gap-2" role="group" aria-label={t('outpost.timeControls')}>
               <Button variant={playing ? 'secondary' : 'primary'} onClick={() => setPlaying((p) => !p)} disabled={blocked && !playing}>
-                {playing ? t('outpost.pause') : t('outpost.play')}
+                <Icon name={playing ? 'pause' : 'play'} /> {playing ? t('outpost.pause') : t('outpost.play')}
               </Button>
               <Button onClick={() => dispatch({ type: 'advanceDay' })} disabled={blocked}>
-                {t('outpost.next')}
+                <Icon name="skip" /> {t('outpost.next')}
               </Button>
               <Button variant="ghost" onClick={() => setSpeed((s) => (s + 1) % SPEEDS.length)} aria-label={t('outpost.speedAria', { speed: SPEEDS[speed].label })}>
                 {SPEEDS[speed].label}
@@ -109,11 +117,11 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
             </div>
           ) : (
             <Button variant="primary" onClick={() => dispatch({ type: 'navigate', screen: 'result' })}>
-              {mission.status === 'success' ? t('outpost.report') : t('outpost.whatWentWrong')}
+              <Icon name={mission.status === 'success' ? 'flag' : 'report'} /> {mission.status === 'success' ? t('outpost.report') : t('outpost.whatWentWrong')}
             </Button>
           )}
           <Button data-tour="help" variant="ghost" onClick={() => setTourOpen(true)} aria-label={t('outpost.tutorialAria')}>
-            <span aria-hidden>❓</span> {t('outpost.tutorial')}
+            <Icon name="help" /> {t('outpost.tutorial')}
           </Button>
           <SoundToggle />
           <LanguageToggle />
@@ -141,7 +149,8 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
               role="status"
               className={`rounded-2xl border px-8 py-6 text-center backdrop-blur ${mission.status === 'success' ? 'border-good/50 bg-good/15' : 'border-critical/50 bg-critical/15'}`}
             >
-              <p className="font-display text-3xl font-bold">{mission.status === 'success' ? t('outpost.complete') : t('outpost.failed')}</p>
+              <p className="font-display text-3xl font-bold"><Icon name={mission.status === 'success' ? 'flag' : 'fail'} className="mr-2" />
+                {mission.status === 'success' ? t('outpost.complete') : t('outpost.failed')}</p>
               <p className="mt-1 text-ink-2">
                 <GlossaryText
                   text={
@@ -152,7 +161,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
                 />
               </p>
               <Button variant="primary" className="mt-4" onClick={() => dispatch({ type: 'navigate', screen: 'result' })}>
-                {t('outpost.analysis')}
+                {t('outpost.analysis')} <Icon name="arrowRight" />
               </Button>
             </div>
           </div>

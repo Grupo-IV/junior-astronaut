@@ -76,3 +76,26 @@ To add or change a text:
 Content texts are addressed by path, for example `events.solar_storm.options.shelter.label`. When you add a text field to a JSON file, `npm test` lists the paths that `pt.json` is missing.
 
 `npm test` also checks that every key exists in both languages with the same placeholders, that no component contains hard-coded visible text, that every screen renders in Portuguese without leftover keys, and that the same mission gives the same result in both languages.
+
+## Ranks
+
+Before choosing a mission you pick a rank. The ranks follow the roles in a real crew, and each one gives you different operating margins. The physics stays the same at every rank: crew consumption, radiation and power work exactly the same way.
+
+| Rank | Lander cargo | Surprises | Mission control |
+| --- | --- | --- | --- |
+| Cadet | 115% | fewer | full forecast and planning tips |
+| Mission Specialist | 100% (the mission as designed) | normal | full forecast and planning tips |
+| Flight Engineer | 95% | more | forecast result only |
+| Commander | 90% | many | no forecast, no tips |
+
+A mission keeps the rank it was launched with. The rules are in [`src/game/ranks.ts`](src/game/ranks.ts).
+
+## Visuals
+
+The game ships no image files. Everything is drawn in code:
+
+- The Moon, the regolith, the Earth, the Milky Way and the hardware textures are generated in the browser, with a fixed seed so the scene looks the same every time ([`src/three/textures/`](src/three/textures)).
+- The 3D outpost has polar lighting with long shadows, crater fields and boulders, horizon massifs, a crew lander, a rover with tyre tracks, hoses between modules, and an astronaut who walks with a low-gravity lope.
+- Icons, rank insignia, the mission emblem, the mascot and the mission artwork are original SVGs ([`src/components/ui/Icon.tsx`](src/components/ui/Icon.tsx) and [`src/components/art/`](src/components/art)). No emoji are used.
+
+During development you can open a screen directly with `?preview=` (only in `npm run dev`): `/?preview=outpost&tour=0`, `/?preview=event`, `/?preview=result` or `/?preview=setup&rank=commander`.

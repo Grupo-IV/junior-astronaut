@@ -3,12 +3,14 @@ import { getMission } from '../content'
 import { BUILDING_IDS, initialStocks } from '../resources/loadout'
 import { illuminationPeriod } from './illumination'
 import { msg, ref } from '../messages'
+import type { RankId } from '../ranks'
 
 export function createMissionState(
   content: GameContent,
   missionId: string,
   loadout: Loadout,
   seed: number,
+  rank: RankId = 'specialist',
 ): MissionState {
   const mission = getMission(content, missionId)
   const buildings: BuildingInstance[] = []
@@ -21,6 +23,7 @@ export function createMissionState(
   const stocks = initialStocks(content, mission, loadout)
   return {
     missionId,
+    rank,
     seed,
     rng: seed,
     day: 0,

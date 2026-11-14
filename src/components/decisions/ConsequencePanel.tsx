@@ -7,6 +7,7 @@ import { useApp } from '../../app/state/AppContext'
 import { eventDef } from '../../game'
 import { useI18n } from '../../i18n/useI18n'
 import type { DecisionRecord } from '../../types/game'
+import { Icon } from '../ui/Icon'
 import { Button } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 
@@ -20,17 +21,17 @@ export function ConsequencePanel({ record }: { record: DecisionRecord }) {
 
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/50 p-2 backdrop-blur-sm sm:items-center sm:p-4">
-      <div role="dialog" aria-modal="true" aria-labelledby="consequence-title" className="w-full max-w-xl rounded-2xl border border-accent-2/40 bg-panel p-5 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="consequence-title" className="hud-frame w-full max-w-xl rounded-2xl p-5 shadow-2xl">
         <p className="text-xs font-bold tracking-widest text-accent-2 uppercase">{t('consequence.kicker')}</p>
         <h2 id="consequence-title" className="mt-1 font-display text-xl font-bold">
-          <span aria-hidden>{option.icon}</span> {option.label}
+          <Icon name={option.icon} className="mr-1 text-accent-2" /> {option.label}
         </h2>
         <ul className="mt-3 space-y-1 text-sm">
           <li className="text-good-ink">
-            ＋ <GlossaryText text={option.benefit} />
+            <Icon name="plus" className="mr-1" /> <GlossaryText text={option.benefit} />
           </li>
           <li className="text-serious">
-            － <GlossaryText text={option.cost} />
+            <Icon name="minus" className="mr-1" /> <GlossaryText text={option.cost} />
           </li>
         </ul>
         {record.notes.length > 0 && (
@@ -52,7 +53,7 @@ export function ConsequencePanel({ record }: { record: DecisionRecord }) {
         <p className="mt-2 text-xs text-ink-3">{t('consequence.watch')}</p>
         <div className="mt-4 flex justify-end">
           <Button ref={buttonRef} variant="primary" onClick={() => dispatch({ type: 'dismissConsequence' })}>
-            {t('consequence.continue')}
+            {t('consequence.continue')} <Icon name="arrowRight" />
           </Button>
         </div>
       </div>
