@@ -30,7 +30,7 @@
       ],
       "scheduledEvents": [{ "day": 5, "eventId": "solar_storm", "variant": "moderate" }],
       "randomEventChancePerDay": 0.15,
-      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "randomEventPool": ["power_failure", "water_leak", "oxygen_leak", "equipment_failure", "crop_failure"],
       "firstRandomEventDay": 3,
       "minDaysBetweenEvents": 2,
       "recommendedLoadout": {
@@ -81,7 +81,7 @@
         { "day": 22, "eventId": "solar_storm", "variant": "severe" }
       ],
       "randomEventChancePerDay": 0.18,
-      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "randomEventPool": ["power_failure", "water_leak", "oxygen_leak", "equipment_failure", "crop_failure"],
       "firstRandomEventDay": 3,
       "minDaysBetweenEvents": 2,
       "recommendedLoadout": {

@@ -8,6 +8,12 @@ import { floodlight, halo, materials, mesh } from './materials'
 export interface Habitat {
   group: THREE.Group
   setPowered: (on: boolean) => void
+  /**
+   * First person: hide the outside parts that would show through the cabin
+   * (window frames, structural rings, the airlock barrel), so the windows look
+   * straight out at the Moon.
+   */
+  setInteriorView: (inside: boolean) => void
   update: (t: number) => void
 }
 
@@ -32,11 +38,14 @@ export function createHabitat(): Habitat {
   capB.scale.set(1, 0.55, 1)
   group.add(capA, capB)
 
+  const hiddenInside: THREE.Object3D[] = []
+
   // Structural rings and the docking port.
   for (const x of [-3.2, -1.1, 1.1, 3.2]) {
     const band = mesh(new THREE.TorusGeometry(2.33, 0.08, 10, 48), m.metal, x, 2.8, 0)
     band.rotation.y = Math.PI / 2
     group.add(band)
+    hiddenInside.push(band)
   }
   const port = mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.5, 32), m.metal, -5.4, 2.8, 0)
   port.rotation.z = Math.PI / 2
@@ -49,13 +58,18 @@ export function createHabitat(): Habitat {
   mli.rotation.z = Math.PI / 2
   group.add(mli)
 
-  // Windows with frames on the front side.
-  for (const x of [-2.2, 0, 2.2]) {
-    const frame = mesh(new THREE.TorusGeometry(0.36, 0.06, 8, 24), m.darkMetal, x, 3.35, 2.24)
-    const pane = mesh(new THREE.CircleGeometry(0.33, 24), m.window, x, 3.35, 2.25, false)
-    frame.rotation.x = -0.25
-    pane.rotation.x = -0.25
+  // Windows with frames: three on the front, one at the back over the power station.
+  for (const [x, side] of [[-2.2, 1], [0, 1], [2.2, 1], [1.4, -1]] as const) {
+    const frame = mesh(new THREE.TorusGeometry(0.36, 0.06, 8, 24), m.darkMetal, x, 3.35, 2.24 * side)
+    const pane = mesh(new THREE.CircleGeometry(0.33, 24), m.window, x, 3.35, 2.25 * side, false)
+    frame.rotation.x = -0.25 * side
+    pane.rotation.x = -0.25 * side
+    if (side === -1) {
+      frame.rotation.y = Math.PI
+      pane.rotation.y = Math.PI
+    }
     group.add(frame, pane)
+    hiddenInside.push(frame, pane)
   }
 
   // Legs with foot pads and braces.
@@ -77,6 +91,7 @@ export function createHabitat(): Habitat {
   hatch.rotation.x = Math.PI / 2
   const hatchWindow = mesh(new THREE.CircleGeometry(0.2, 16), m.window, 0, 2.45, 4.09, false)
   group.add(airlock, hatch, hatchWindow)
+  hiddenInside.push(airlock)
   for (const x of [-0.95, 0.95]) group.add(mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.4, 6), m.orange, x, 2.2, 4.0))
   group.add(mesh(new THREE.BoxGeometry(2.2, 0.12, 1.4), m.metal, 0, 0.9, 4.6))
   for (let i = 0; i < 3; i++) group.add(mesh(new THREE.BoxGeometry(1.2, 0.08, 0.35), m.darkMetal, 0, 0.18 + i * 0.25, 5.45 - i * 0.3))
@@ -131,6 +146,9 @@ export function createHabitat(): Habitat {
       powered = on
       for (const w of [m.window]) w.emissiveIntensity = on ? 2.2 : 0.05
       for (const f of floods) f.userData.setOn(on)
+    },
+    setInteriorView: (inside) => {
+      for (const o of hiddenInside) o.visible = !inside
     },
     update: (t) => {
       const blink = powered && Math.floor(t * 1.2) % 2 === 0

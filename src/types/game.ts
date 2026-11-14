@@ -65,6 +65,8 @@ export interface BuildingDef {
   oxygenBonusKgPerDay?: number
   waterUseKgPerDay?: number
   stormDoseFactor?: number
+  /** Extra life-support power while the crew is inside (shelter). */
+  occupiedPowerKwhPerDay?: number
   summary: string
   benefit: string
   tradeoff: string
@@ -146,26 +148,37 @@ export type ModifierKind =
   | 'building_offline' // target building does not run
   | 'extra_power' // extra kWh/day demand
   | 'water_loss' // fraction of stored water lost per day
+  | 'oxygen_loss' // fraction of stored oxygen lost per day (cabin air leak)
 
 export type BuildingTarget = BuildingId | 'random-active' | 'random-life-support' | 'event-target'
-
-export type Effect =
-  | { type: 'addStock'; stock: StockId; amount: number }
-  | { type: 'scaleStock'; stock: StockId; factor: number }
-  | { type: 'addDose'; msv: number }
-  | { type: 'modifier'; kind: ModifierKind; value: number; days: number; target?: BuildingId; label: string }
-  | { type: 'failBuilding'; target: BuildingTarget }
-  | { type: 'repairBuilding'; target: BuildingTarget }
-  | { type: 'disableBuilding'; target: BuildingId }
-  | { type: 'resetGrowth' }
-  | { type: 'useSpare'; amount: number }
-  | { type: 'chance'; probability: number; effects: Effect[]; otherwise?: Effect[]; note: string; otherwiseNote?: string }
 
 export interface OptionRequirement {
   building?: BuildingId
   spareParts?: number
   minStock?: { stock: StockId; amount: number }
 }
+
+/**
+ * Habitat states that a modifier stands for, so the 3D interior can show
+ * them (a sealed hatch, an ongoing leak). Tags never change the numbers.
+ */
+export type ModifierTag = 'bay_sealed' | 'crew_sheltered'
+
+export type Effect =
+  | { type: 'addStock'; stock: StockId; amount: number }
+  | { type: 'scaleStock'; stock: StockId; factor: number }
+  | { type: 'addDose'; msv: number }
+  | { type: 'modifier'; kind: ModifierKind; value: number; days: number; target?: BuildingId; label: string; tag?: ModifierTag }
+  | { type: 'failBuilding'; target: BuildingTarget }
+  | { type: 'repairBuilding'; target: BuildingTarget }
+  | { type: 'disableBuilding'; target: BuildingId }
+  | { type: 'resetGrowth' }
+  | { type: 'useSpare'; amount: number }
+  | { type: 'chance'; probability: number; effects: Effect[]; otherwise?: Effect[]; note: string; otherwiseNote?: string }
+  /** Runs `then` when the base meets `if` right now (spares, stock, a working building), otherwise `else`. */
+  | { type: 'branch'; if: OptionRequirement; then: Effect[]; else?: Effect[] }
+  /** After this decision, a second decision about the same situation (e.g. what diagnostics found). */
+  | { type: 'followUp'; eventId: string }
 
 export type RiskTag = 'oxygen' | 'water' | 'food' | 'power' | 'radiation'
 
@@ -192,6 +205,19 @@ export interface EventVariant {
   onTrigger: Effect[]
 }
 
+/**
+ * A situation that cannot wait. In the immersive view the crew has `seconds`
+ * (scaled by rank) to decide; when time runs out, `effects` apply (what the
+ * delay cost) and then the `fallback` option runs, as the base's automatic
+ * systems or the rest of the crew would do.
+ */
+export interface EventUrgency {
+  seconds: number
+  fallback: string
+  effects?: Effect[]
+  note: string
+}
+
 export interface EventDef {
   id: string
   title: string
@@ -203,6 +229,7 @@ export interface EventDef {
   conditions?: EventTriggerConditions
   onTrigger: Effect[]
   variants?: Record<string, EventVariant>
+  urgency?: EventUrgency
   options: DecisionOption[]
 }
 
@@ -225,6 +252,7 @@ export interface Modifier {
   target?: BuildingId
   label: Message
   source: string
+  tag?: ModifierTag
 }
 
 export type LogKind = 'info' | 'success' | 'warning' | 'danger' | 'science'
@@ -248,6 +276,8 @@ export interface DecisionRecord {
   optionId: string
   risks: RiskTag[]
   notes: Message[]
+  /** True when the crew did not decide in time and the event's fallback ran. */
+  timedOut?: boolean
 }
 
 export interface DaySnapshot {

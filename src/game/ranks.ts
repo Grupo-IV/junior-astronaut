@@ -31,13 +31,15 @@ export interface RankDef {
   forecast: 'full' | 'summary' | 'none'
   /** Planning warnings ("No spare parts…") while packing. */
   hints: boolean
+  /** Multiplies the time to decide an urgent event in the immersive view. */
+  decisionTimeFactor: number
 }
 
 export const RANKS: Record<RankId, RankDef> = {
-  cadet: { id: 'cadet', massBudgetFactor: 1.15, eventChanceFactor: 0.5, eventGapDelta: 1, firstEventDelta: 1, forecast: 'full', hints: true },
-  specialist: { id: 'specialist', massBudgetFactor: 1, eventChanceFactor: 1, eventGapDelta: 0, firstEventDelta: 0, forecast: 'full', hints: true },
-  engineer: { id: 'engineer', massBudgetFactor: 0.95, eventChanceFactor: 1.3, eventGapDelta: 0, firstEventDelta: 0, forecast: 'summary', hints: false },
-  commander: { id: 'commander', massBudgetFactor: 0.9, eventChanceFactor: 1.6, eventGapDelta: -1, firstEventDelta: -1, forecast: 'none', hints: false },
+  cadet: { id: 'cadet', massBudgetFactor: 1.15, eventChanceFactor: 0.5, eventGapDelta: 1, firstEventDelta: 1, forecast: 'full', hints: true, decisionTimeFactor: 1.5 },
+  specialist: { id: 'specialist', massBudgetFactor: 1, eventChanceFactor: 1, eventGapDelta: 0, firstEventDelta: 0, forecast: 'full', hints: true, decisionTimeFactor: 1.2 },
+  engineer: { id: 'engineer', massBudgetFactor: 0.95, eventChanceFactor: 1.3, eventGapDelta: 0, firstEventDelta: 0, forecast: 'summary', hints: false, decisionTimeFactor: 1 },
+  commander: { id: 'commander', massBudgetFactor: 0.9, eventChanceFactor: 1.6, eventGapDelta: -1, firstEventDelta: -1, forecast: 'none', hints: false, decisionTimeFactor: 0.8 },
 }
 
 export const DEFAULT_RANK: RankId = 'cadet'

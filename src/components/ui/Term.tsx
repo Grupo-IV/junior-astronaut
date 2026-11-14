@@ -118,9 +118,13 @@ export function Term({ id, children }: { id: GlossaryId; children: ReactNode }) 
   )
 }
 
-/** Renders text with the first occurrence of each glossary term made explainable. */
-export function GlossaryText({ text }: { text: string }) {
+/**
+ * Renders text with the first occurrence of each glossary term made explainable.
+ * `plain` keeps the text as is: terms are buttons, and a button cannot sit inside another one.
+ */
+export function GlossaryText({ text, plain = false }: { text: string; plain?: boolean }) {
   const { locale } = useI18n()
+  if (plain) return <>{text}</>
   return (
     <>
       {splitGlossary(text, locale).map((part, i) => (

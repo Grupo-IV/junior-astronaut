@@ -10,11 +10,14 @@ import {
   getMission,
   newSeed,
   repairBuilding,
+  takeShelter,
+  leaveShelter,
   resolveDecision,
   toLoadout,
   toggleBuilding,
 } from '../../game'
 import { contentForRank, DEFAULT_RANK, isRankId, type RankId } from '../../game/ranks'
+import type { ViewMode } from '../../immersive/types'
 
 export type Screen = 'menu' | 'select' | 'briefing' | 'setup' | 'outpost' | 'result'
 
@@ -26,6 +29,8 @@ export interface AppState {
   loadout: Loadout
   mission: MissionState | null
   consequenceIndex: number | null
+  /** How the outpost is shown: the management view from outside, or first person inside the habitat. */
+  view: ViewMode
 }
 
 export type AppAction =
@@ -35,13 +40,17 @@ export type AppAction =
   | { type: 'setLoadout'; loadout: Loadout }
   | { type: 'launch' }
   | { type: 'advanceDay' }
-  | { type: 'decide'; optionId: string }
+  | { type: 'decide'; optionId: string; timedOut?: boolean }
+  | { type: 'setView'; view: ViewMode }
   | { type: 'dismissConsequence' }
   | { type: 'toggleBuilding'; uid: string }
   | { type: 'repairBuilding'; uid: string }
+  | { type: 'takeShelter' }
+  | { type: 'leaveShelter' }
   | { type: 'retry' }
 
 const RANK_KEY = 'junior-astronaut:rank'
+const VIEW_KEY = 'junior-astronaut:view'
 
 function savedRank(): RankId {
   try {
@@ -61,9 +70,34 @@ function saveRank(rank: RankId) {
   }
 }
 
+function savedView(): ViewMode {
+  try {
+    if (globalThis.localStorage?.getItem(VIEW_KEY) === 'firstPerson') return 'firstPerson'
+  } catch {
+    // Storage blocked: start in the management view.
+  }
+  return 'orbit'
+}
+
+function saveView(view: ViewMode) {
+  try {
+    globalThis.localStorage?.setItem(VIEW_KEY, view)
+  } catch {
+    // The choice still applies for this session.
+  }
+}
+
 export function initialAppState(): AppState {
   const first = gameContent.missions[0]
-  return { screen: 'menu', rank: savedRank(), missionId: first.id, loadout: toLoadout(first.recommendedLoadout), mission: null, consequenceIndex: null }
+  return {
+    screen: 'menu',
+    rank: savedRank(),
+    missionId: first.id,
+    loadout: toLoadout(first.recommendedLoadout),
+    mission: null,
+    consequenceIndex: null,
+    view: savedView(),
+  }
 }
 
 /** Rules for planning the next mission (the rank currently selected). */
@@ -108,14 +142,21 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
     case 'decide': {
       if (!state.mission) return state
-      const mission = resolveDecision(missionRules(state.mission), state.mission, action.optionId)
+      const mission = resolveDecision(missionRules(state.mission), state.mission, action.optionId, { timedOut: action.timedOut })
       if (mission === state.mission) return state
       return { ...state, mission, consequenceIndex: mission.decisions.length - 1 }
     }
+    case 'setView':
+      saveView(action.view)
+      return { ...state, view: action.view }
     case 'dismissConsequence':
       return { ...state, consequenceIndex: null }
     case 'toggleBuilding':
       return state.mission ? { ...state, mission: toggleBuilding(missionRules(state.mission), state.mission, action.uid) } : state
+    case 'takeShelter':
+      return state.mission ? { ...state, mission: takeShelter(missionRules(state.mission), state.mission) } : state
+    case 'leaveShelter':
+      return state.mission ? { ...state, mission: leaveShelter(missionRules(state.mission), state.mission) } : state
     case 'repairBuilding':
       return state.mission ? { ...state, mission: repairBuilding(missionRules(state.mission), state.mission, action.uid) } : state
   }

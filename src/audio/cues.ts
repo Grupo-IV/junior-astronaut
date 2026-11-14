@@ -16,13 +16,17 @@
  */
 import type { GameContent, MissionState } from '../types/game'
 
-export type Cue = 'caution' | 'warning' | 'storm' | 'success' | 'failure'
+export type Cue = 'caution' | 'warning' | 'storm' | 'emergency' | 'success' | 'failure'
 
 /** Higher wins when several things happen on the same day: one sound per tick keeps audio discreet. */
-const PRIORITY: Record<Cue, number> = { failure: 5, success: 4, warning: 3, storm: 2, caution: 1 }
+const PRIORITY: Record<Cue, number> = { failure: 6, success: 5, emergency: 4, warning: 3, storm: 2, caution: 1 }
 
-/** Events that threaten the crew directly. Everything else is a caution. */
-const EVENT_CUE: Record<string, Cue> = { solar_storm: 'storm' }
+/**
+ * Events that threaten the crew directly. Everything else is a caution.
+ * A cabin leak is an *emergency*, the ISS class above warning (with fire and
+ * toxic air): the crew drops everything.
+ */
+const EVENT_CUE: Record<string, Cue> = { solar_storm: 'storm', oxygen_leak: 'emergency' }
 
 function isNewMission(prev: MissionState, next: MissionState) {
   return prev.missionId !== next.missionId || prev.seed !== next.seed || next.day < prev.day
@@ -81,6 +85,18 @@ export function radiationClickRate(state: MissionState): number {
   const rate = stormDoseRate(state)
   if (rate <= 0) return 0
   return Math.min(MAX_CLICKS_PER_SECOND, Math.max(MIN_CLICKS_PER_SECOND, (rate / FULL_SCALE_MSV_PER_DAY) * MAX_CLICKS_PER_SECOND))
+}
+
+/**
+ * Hiss of air escaping through a breach, 0..1. It is inside the pressurised
+ * cabin, so it is real sound: loud while the breach is open to the cabin,
+ * faint while a sealed or patched leak still seeps, silent when fixed.
+ */
+export function airLeakLevel(state: MissionState): number {
+  if (state.status === 'success' || state.status === 'failure') return 0
+  const pending = state.pendingEvent?.eventId
+  if (pending === 'oxygen_leak' || pending === 'oxygen_leak_located') return 1
+  return state.modifiers.some((m) => m.kind === 'oxygen_loss' && m.remainingDays > 0) ? 0.3 : 0
 }
 
 /**

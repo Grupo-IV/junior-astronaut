@@ -9,6 +9,11 @@
       "principle": "Shielding works by putting mass between people and radiation. Dense, hydrogen-rich material (water, regolith, polyethylene) stops solar protons best.",
       "source": "radiation",
       "onTrigger": [],
+      "urgency": {
+        "seconds": 30,
+        "fallback": "continue",
+        "note": "No order came in time: the crew carried on with normal operations while the particles arrived."
+      },
       "variants": {
         "moderate": {
           "label": "Moderate storm (NOAA S3)",
@@ -32,9 +37,9 @@
           "cost": "Shelter life support uses +10 kWh/day. Nobody tends the greenhouse (half production). Electronics outside stay exposed.",
           "requires": { "building": "radiation_shelter" },
           "effects": [
-            { "type": "modifier", "kind": "dose_factor", "value": 0.1, "days": 2, "label": "Crew in shelter: 90% of storm dose blocked" },
-            { "type": "modifier", "kind": "extra_power", "value": 10, "days": 2, "label": "Shelter life support: +10 kWh/day" },
-            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 2, "label": "Greenhouse unattended: 50% output" },
+            { "type": "modifier", "kind": "dose_factor", "value": 0.1, "days": 2, "label": "Crew in shelter: 90% of storm dose blocked", "tag": "crew_sheltered" },
+            { "type": "modifier", "kind": "extra_power", "value": 10, "days": 2, "label": "Shelter life support: +10 kWh/day", "tag": "crew_sheltered" },
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 2, "label": "Greenhouse unattended: 50% output", "tag": "crew_sheltered" },
             {
               "type": "chance",
               "probability": 0.3,
@@ -161,6 +166,12 @@
       "principle": "Redundancy and spare parts turn a crisis into a routine repair.",
       "source": "eclss",
       "onTrigger": [{ "type": "addStock", "stock": "water", "amount": -8 }],
+      "urgency": {
+        "seconds": 30,
+        "fallback": "monitor",
+        "effects": [{ "type": "addStock", "stock": "water", "amount": -3 }],
+        "note": "No decision in time: 3 kg more water dripped away while the crew kept watching the leak."
+      },
       "options": [
         {
           "id": "spare_fix",
@@ -318,6 +329,189 @@
           "effects": [{ "type": "disableBuilding", "target": "greenhouse" }, { "type": "resetGrowth" }],
           "risks": ["food", "oxygen"],
           "lesson": "Sometimes the best engineering decision is to cut your losses and redirect resources."
+        }
+      ]
+    },
+    "oxygen_leak": {
+      "id": "oxygen_leak",
+      "title": "Emergency: Oxygen Leak",
+      "icon": "airLeak",
+      "what": "Cabin pressure is dropping. Inside the life-support bay, a seal where an oxygen line passes through the hull has cracked, and air is hissing out: 4 kg of oxygen are already gone.",
+      "why": "The habitat keeps air at the same pressure as on Earth, with vacuum on the other side of the wall. Every seal is pushed outward all the time, and the cold makes rubber stiff and brittle.",
+      "principle": "Hatches split a spacecraft into compartments. Closing one cuts a leak off from the crew: ISS crews have closed hatches module by module to hunt down slow leaks.",
+      "source": "eclss",
+      "onTrigger": [{ "type": "addStock", "stock": "oxygen", "amount": -4 }],
+      "urgency": {
+        "seconds": 25,
+        "fallback": "isolate",
+        "effects": [{ "type": "addStock", "stock": "oxygen", "amount": -2 }],
+        "note": "Nobody gave an order in time. 2 kg more oxygen escaped before the pressure sensors closed the bay hatch on their own."
+      },
+      "options": [
+        {
+          "id": "repair",
+          "label": "Repair the leak right now",
+          "icon": "wrench",
+          "benefit": "If it works, the leak is gone and every compartment stays in use.",
+          "cost": "Opening the panel lets 1 kg more escape. With a spare kit it almost always works (90%); without one it is a gamble (45%).",
+          "effects": [
+            { "type": "addStock", "stock": "oxygen", "amount": -1 },
+            {
+              "type": "branch",
+              "if": { "spareParts": 1 },
+              "then": [
+                { "type": "useSpare", "amount": 1 },
+                {
+                  "type": "chance",
+                  "probability": 0.9,
+                  "effects": [],
+                  "otherwise": [{ "type": "modifier", "kind": "oxygen_loss", "value": 0.05, "days": 2, "label": "New seal seated badly: -5% oxygen/day" }],
+                  "note": "The new seal from the spare kit is holding. Cabin pressure is back to normal.",
+                  "otherwiseNote": "The new seal did not seat properly: a slow leak continues for 2 days."
+                }
+              ],
+              "else": [
+                {
+                  "type": "chance",
+                  "probability": 0.45,
+                  "effects": [],
+                  "otherwise": [{ "type": "modifier", "kind": "oxygen_loss", "value": 0.1, "days": 3, "label": "Patch blew out: -10% oxygen/day" }],
+                  "note": "No spare seal, but the improvised patch of sealant and tape is holding.",
+                  "otherwiseNote": "No spare seal, and the improvised patch blew out under pressure. The leak is worse for 3 days."
+                }
+              ]
+            }
+          ],
+          "risks": ["oxygen"],
+          "lesson": "In 2018 an ISS crew found a 2 mm hole in their Soyuz and sealed it with epoxy and gauze. Fast repairs work best with the right parts at hand."
+        },
+        {
+          "id": "isolate",
+          "label": "Seal off the life-support bay",
+          "icon": "valve",
+          "benefit": "Closing the hatch cuts the leak off from the crew. With power, the motorised hatch seals for sure.",
+          "cost": "The air left in the bay is lost to the crew (15% of stored oxygen). The oxygen generator feeds the cabin through the bay: only half its output arrives for 3 days. With empty batteries the hatch is closed by hand (60%).",
+          "effects": [
+            { "type": "scaleStock", "stock": "oxygen", "factor": 0.85 },
+            { "type": "modifier", "kind": "building_output", "target": "oxygen_generator", "value": 0.5, "days": 3, "label": "Life-support bay sealed: oxygen generator at 50%", "tag": "bay_sealed" },
+            {
+              "type": "branch",
+              "if": { "minStock": { "stock": "energy", "amount": 5 } },
+              "then": [],
+              "else": [
+                {
+                  "type": "chance",
+                  "probability": 0.6,
+                  "effects": [],
+                  "otherwise": [{ "type": "modifier", "kind": "oxygen_loss", "value": 0.04, "days": 2, "label": "Hatch closed by hand, not airtight: -4% oxygen/day" }],
+                  "note": "With the batteries empty, the crew cranked the hatch shut by hand. It is airtight.",
+                  "otherwiseNote": "With the batteries empty, the crew cranked the hatch shut by hand, but it is not fully airtight: a slow leak continues for 2 days."
+                }
+              ]
+            }
+          ],
+          "risks": ["oxygen"],
+          "lesson": "Compartments are a spacecraft's safety net: a leak behind a closed hatch can no longer reach the crew."
+        },
+        {
+          "id": "shelter",
+          "label": "Move the crew to the shelter module",
+          "icon": "crew",
+          "benefit": "The crew breathes safely in the shelter while the empty habitat is resealed and refilled. The leak is fixed for sure.",
+          "cost": "Refilling the habitat uses 6 kg of oxygen. Shelter life support needs +10 kWh/day and the greenhouse is left alone (50%) for a day.",
+          "requires": { "building": "radiation_shelter" },
+          "effects": [
+            { "type": "addStock", "stock": "oxygen", "amount": -6 },
+            { "type": "modifier", "kind": "extra_power", "value": 10, "days": 1, "label": "Crew in the shelter: +10 kWh/day", "tag": "crew_sheltered" },
+            { "type": "modifier", "kind": "building_output", "target": "greenhouse", "value": 0.5, "days": 1, "label": "Crew in the shelter: greenhouse 50%" }
+          ],
+          "risks": ["power"],
+          "lesson": "The first rule of an emergency is to keep the crew safe. Machines can be fixed later; people cannot be replaced."
+        },
+        {
+          "id": "diagnose",
+          "label": "Run the leak diagnostics first",
+          "icon": "science",
+          "benefit": "Ultrasonic sensors find the exact crack, so your next move is far more likely to work.",
+          "cost": "Air keeps escaping while the scan runs: 2 kg more oxygen lost. Then you still have to choose a fix.",
+          "effects": [
+            { "type": "addStock", "stock": "oxygen", "amount": -2 },
+            { "type": "followUp", "eventId": "oxygen_leak_located" }
+          ],
+          "risks": ["oxygen"],
+          "lesson": "Finding a leak is often harder than fixing it. In 2020 the ISS crew used ultrasonic detectors, and even floating tea leaves, to find a tiny leak."
+        }
+      ]
+    },
+    "oxygen_leak_located": {
+      "id": "oxygen_leak_located",
+      "title": "Leak Located",
+      "icon": "target",
+      "what": "Diagnostics found it: a 3 cm crack in the hull seal of an oxygen line, inside the life-support bay. Air is still escaping.",
+      "why": "Escaping air makes ultrasound: far too high for human ears, but easy for a sensor to hear and point at.",
+      "principle": "Good information turns a gamble into an engineering decision.",
+      "source": "eclss",
+      "onTrigger": [],
+      "urgency": {
+        "seconds": 20,
+        "fallback": "isolate",
+        "effects": [{ "type": "addStock", "stock": "oxygen", "amount": -2 }],
+        "note": "Nobody gave an order in time. 2 kg more oxygen escaped before the pressure sensors closed the bay hatch on their own."
+      },
+      "options": [
+        {
+          "id": "repair",
+          "label": "Replace the cracked seal",
+          "icon": "wrench",
+          "benefit": "You know exactly where to work. With a spare kit the fix is certain; without one, a targeted patch works 75% of the time.",
+          "cost": "Uses one spare kit if you have one.",
+          "effects": [
+            {
+              "type": "branch",
+              "if": { "spareParts": 1 },
+              "then": [{ "type": "useSpare", "amount": 1 }],
+              "else": [
+                {
+                  "type": "chance",
+                  "probability": 0.75,
+                  "effects": [],
+                  "otherwise": [{ "type": "modifier", "kind": "oxygen_loss", "value": 0.06, "days": 2, "label": "Patch leaking at one edge: -6% oxygen/day" }],
+                  "note": "No spare seal, but the patch over the crack is holding.",
+                  "otherwiseNote": "No spare seal, and the patch leaks at one edge: a slow leak continues for 2 days."
+                }
+              ]
+            }
+          ],
+          "risks": ["oxygen"],
+          "lesson": "Diagnose, then repair: knowing the exact failure lets a crew use the smallest, surest fix."
+        },
+        {
+          "id": "isolate",
+          "label": "Seal off the life-support bay",
+          "icon": "valve",
+          "benefit": "Closing the hatch cuts the leak off from the crew. With power, the motorised hatch seals for sure.",
+          "cost": "The air left in the bay is lost to the crew (15% of stored oxygen). The oxygen generator feeds the cabin through the bay: only half its output arrives for 3 days. With empty batteries the hatch is closed by hand (60%).",
+          "effects": [
+            { "type": "scaleStock", "stock": "oxygen", "factor": 0.85 },
+            { "type": "modifier", "kind": "building_output", "target": "oxygen_generator", "value": 0.5, "days": 3, "label": "Life-support bay sealed: oxygen generator at 50%", "tag": "bay_sealed" },
+            {
+              "type": "branch",
+              "if": { "minStock": { "stock": "energy", "amount": 5 } },
+              "then": [],
+              "else": [
+                {
+                  "type": "chance",
+                  "probability": 0.6,
+                  "effects": [],
+                  "otherwise": [{ "type": "modifier", "kind": "oxygen_loss", "value": 0.04, "days": 2, "label": "Hatch closed by hand, not airtight: -4% oxygen/day" }],
+                  "note": "With the batteries empty, the crew cranked the hatch shut by hand. It is airtight.",
+                  "otherwiseNote": "With the batteries empty, the crew cranked the hatch shut by hand, but it is not fully airtight: a slow leak continues for 2 days."
+                }
+              ]
+            }
+          ],
+          "risks": ["oxygen"],
+          "lesson": "Compartments are a spacecraft's safety net: a leak behind a closed hatch can no longer reach the crew."
         }
       ]
     }

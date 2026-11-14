@@ -165,6 +165,118 @@ export function hullTexture(): THREE.CanvasTexture {
   return texture(c)
 }
 
+/**
+ * Interior wall: soft off-white panels with seams, fasteners and a strip of
+ * hook-and-loop fabric, like the racks lining a space station module.
+ */
+export function interiorPanelTexture(): THREE.CanvasTexture {
+  const [c, ctx] = canvas(512)
+  ctx.fillStyle = '#d6d8d4'
+  ctx.fillRect(0, 0, 512, 512)
+  const rand = seededRandom(17)
+  for (let i = 0; i < 1800; i++) {
+    ctx.fillStyle = `rgba(0,0,0,${rand() * 0.03})`
+    ctx.fillRect(rand() * 512, rand() * 512, 2 + rand() * 5, 1 + rand() * 2)
+  }
+  // Panel quilting: each panel slightly brighter at the centre, darker at the seams.
+  for (let px = 0; px < 2; px++) {
+    for (let py = 0; py < 2; py++) {
+      const g = ctx.createRadialGradient(px * 256 + 128, py * 256 + 128, 20, px * 256 + 128, py * 256 + 128, 190)
+      g.addColorStop(0, 'rgba(255,255,255,0.10)')
+      g.addColorStop(1, 'rgba(0,0,0,0.10)')
+      ctx.fillStyle = g
+      ctx.fillRect(px * 256, py * 256, 256, 256)
+    }
+  }
+  ctx.strokeStyle = 'rgba(60,66,78,0.6)'
+  ctx.lineWidth = 3
+  for (const v of [0, 256, 512]) {
+    ctx.beginPath()
+    ctx.moveTo(v, 0)
+    ctx.lineTo(v, 512)
+    ctx.moveTo(0, v)
+    ctx.lineTo(512, v)
+    ctx.stroke()
+  }
+  ctx.fillStyle = 'rgba(55,60,70,0.7)'
+  for (const x of [14, 242, 270, 498]) for (const y of [14, 242, 270, 498]) {
+    ctx.beginPath()
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // Velcro strips where loose items are stuck in low gravity.
+  ctx.fillStyle = 'rgba(70,74,82,0.35)'
+  ctx.fillRect(60, 120, 90, 16)
+  ctx.fillRect(330, 380, 70, 16)
+  return texture(c)
+}
+
+/** Interior floor: dark anti-slip plates with a raised diamond pattern and yellow edge marks. */
+export function floorPlateTexture(): THREE.CanvasTexture {
+  const [c, ctx] = canvas(256)
+  ctx.fillStyle = '#3b3f46'
+  ctx.fillRect(0, 0, 256, 256)
+  ctx.fillStyle = 'rgba(255,255,255,0.07)'
+  for (let y = 0; y < 256; y += 16) {
+    for (let x = (y / 16) % 2 ? 8 : 0; x < 256; x += 16) {
+      ctx.save()
+      ctx.translate(x + 4, y + 4)
+      ctx.rotate(Math.PI / 4)
+      ctx.fillRect(-4, -1.2, 8, 2.4)
+      ctx.restore()
+    }
+  }
+  ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+  ctx.lineWidth = 3
+  ctx.strokeRect(1.5, 1.5, 253, 253)
+  return texture(c)
+}
+
+/** Yellow and black hazard stripes for door frames and edges. */
+export function hazardStripeTexture(): THREE.CanvasTexture {
+  const [c, ctx] = canvas(128)
+  ctx.fillStyle = '#f2b81c'
+  ctx.fillRect(0, 0, 128, 128)
+  ctx.fillStyle = '#16171a'
+  for (let i = -128; i < 256; i += 32) {
+    ctx.beginPath()
+    ctx.moveTo(i, 0)
+    ctx.lineTo(i + 16, 0)
+    ctx.lineTo(i + 16 + 128, 128)
+    ctx.lineTo(i + 128, 128)
+    ctx.closePath()
+    ctx.fill()
+  }
+  return texture(c)
+}
+
+/** The radiation trefoil (ISO 361): black on yellow, understood without words. */
+export function trefoilTexture(): THREE.CanvasTexture {
+  const [c, ctx] = canvas(256)
+  ctx.fillStyle = '#f2c21c'
+  ctx.beginPath()
+  ctx.arc(128, 128, 124, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#16171a'
+  ctx.lineWidth = 8
+  ctx.stroke()
+  ctx.fillStyle = '#16171a'
+  ctx.beginPath()
+  ctx.arc(128, 128, 18, 0, Math.PI * 2)
+  ctx.fill()
+  for (let i = 0; i < 3; i++) {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 3
+    ctx.beginPath()
+    ctx.arc(128, 128, 98, a - Math.PI / 6, a + Math.PI / 6)
+    ctx.arc(128, 128, 30, a + Math.PI / 6, a - Math.PI / 6, true)
+    ctx.closePath()
+    ctx.fill()
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
 /** Soft radial glow for sprites (sun glare, lamps, atmosphere). */
 export function glowTexture(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,255,255,0)'): THREE.CanvasTexture {
   const [c, ctx] = canvas(256)
@@ -234,36 +346,81 @@ export function earthTextures(seed = 5): { map: THREE.CanvasTexture; clouds: THR
 }
 
 /** Faint Milky Way band for the sky dome. */
+/**
+ * The Milky Way as an equirectangular map whose equator is the galactic
+ * plane: a diffuse band, wider and warmer towards the galactic centre (u = 0),
+ * split by dark dust lanes, with soft star clouds and a few faint emission
+ * nebulae. Kept dim and desaturated, as the eye or a camera sees it; the
+ * individual stars are drawn separately (see sky.ts).
+ */
 export function milkyWayTexture(seed = 21): THREE.CanvasTexture {
   const w = 1024
   const h = 512
   const [c, ctx] = canvas(w)
   c.height = h
-  ctx.fillStyle = '#000'
-  ctx.fillRect(0, 0, w, h)
-  const img = ctx.getImageData(0, 0, w, h)
-  const rand = seededRandom(seed)
+  const img = ctx.createImageData(w, h)
+  const nebulae = [
+    { l: -0.55, b: -0.02, r: 0.05, k: 0.5 },
+    { l: 0.35, b: 0.015, r: 0.035, k: 0.4 },
+    { l: 1.7, b: -0.03, r: 0.06, k: 0.3 },
+    { l: -2.3, b: 0.02, r: 0.045, k: 0.25 },
+  ]
   for (let y = 0; y < h; y++) {
+    const b = (0.5 - (y + 0.5) / h) * Math.PI
     for (let x = 0; x < w; x++) {
-      const band = Math.exp(-(((y - h * 0.42 - Math.sin((x / w) * Math.PI * 2) * h * 0.18) / (h * 0.09)) ** 2))
-      const cloud = fbm((x / w) * 12, (y / h) * 6, 5, seed, 12) * 0.5 + 0.5
-      const dust = fbm((x / w) * 30, (y / h) * 15, 3, seed + 2, 30) * 0.5 + 0.5
-      const v = band * cloud * (dust > 0.55 ? 0.55 : 1)
+      const u = (x + 0.5) / w
+      let l = u * Math.PI * 2
+      if (l > Math.PI) l -= Math.PI * 2
+      const core = Math.exp(-((l / 1.1) ** 2))
+      // About 15–20° wide in most of the sky, wider and brighter towards the centre.
+      const sigma = 0.12 + 0.12 * Math.exp(-((l / 0.6) ** 2))
+      const band = Math.exp(-((b / sigma) ** 2))
+      const bulge = Math.exp(-((l / 0.32) ** 2 + (b / 0.15) ** 2))
+      const n = fbm(u * 10, (b / Math.PI + 0.5) * 5, 5, seed, 10) * 0.5 + 0.5
+      const clouds = 0.35 + 1.3 * n ** 1.6
+      // Dust: the dark rift splitting the band towards the centre only, and patchy dust lanes.
+      const rift = Math.exp(-(((b - 0.015 - 0.03 * Math.sin(l * 3)) / (0.022 + 0.03 * core)) ** 2)) * 0.75 * Math.exp(-((l / 1.0) ** 2))
+      const patchy = Math.max(0, fbm(u * 32, (b / Math.PI + 0.5) * 16, 3, seed + 7, 32)) * 0.9
+      const dust = Math.max(0.2, 1 - rift - patchy * 0.5)
+      let v = (band * (0.45 + 0.55 * core) * clouds + bulge * 0.8) * dust
+      v = Math.min(1, v)
+      // Warm (old stars) towards the centre, neutral to cool white elsewhere: low saturation.
+      const warm = Math.min(1, core * 0.9 + bulge * 0.6)
+      let r = v * (205 + 40 * warm)
+      let g = v * (212 + 18 * warm)
+      let bl = v * (232 - 22 * warm)
+      for (const n of nebulae) {
+        const d = ((l - n.l) / n.r) ** 2 + ((b - n.b) / n.r) ** 2
+        if (d < 9) {
+          const k = Math.exp(-d) * n.k * (0.6 + 0.4 * clouds)
+          r += 120 * k
+          g += 38 * k
+          bl += 52 * k
+        }
+      }
       const i = (y * w + x) * 4
-      img.data[i] = 120 * v + 8 * band
-      img.data[i + 1] = 118 * v + 6 * band
-      img.data[i + 2] = 150 * v + 14 * band
+      // Overall level: a soft glow, never brighter than the bright stars.
+      img.data[i] = Math.min(255, r * 0.42)
+      img.data[i + 1] = Math.min(255, g * 0.42)
+      img.data[i + 2] = Math.min(255, bl * 0.42)
       img.data[i + 3] = 255
     }
   }
-  for (let i = 0; i < 9000; i++) {
-    const x = Math.floor(rand() * w)
-    const y = Math.floor(rand() * h)
-    const k = (y * w + x) * 4
-    const b = 120 + rand() * 135
-    img.data[k] = img.data[k + 1] = img.data[k + 2] = b
-  }
   ctx.putImageData(img, 0, 0)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
+/** A small round, soft-edged dot: stars are points of light, not squares. */
+export function starTexture(): THREE.CanvasTexture {
+  const [c, ctx] = canvas(32)
+  const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16)
+  g.addColorStop(0, 'rgba(255,255,255,1)')
+  g.addColorStop(0.35, 'rgba(255,255,255,0.85)')
+  g.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, 32, 32)
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
   return t

@@ -7,7 +7,7 @@ import { useI18n } from '../../i18n/useI18n'
 import { Icon } from './Icon'
 import { Button } from './ui'
 
-export function SoundToggle({ className = '' }: { className?: string }) {
+export function SoundToggle({ className = '', compact = false }: { className?: string; compact?: boolean }) {
   const muted = useMuted()
   const { t } = useI18n()
   return (
@@ -19,7 +19,7 @@ export function SoundToggle({ className = '' }: { className?: string }) {
       onClick={() => setMuted(!muted)}
     >
       <Icon name={muted ? 'volumeOff' : 'volume'} />
-      <span className="hidden sm:inline">{muted ? t('sound.off') : t('sound.on')}</span>
+      {!compact && <span className="hidden sm:inline">{muted ? t('sound.off') : t('sound.on')}</span>}
     </Button>
   )
 }

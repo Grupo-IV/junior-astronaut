@@ -263,6 +263,36 @@ const P: Record<string, ReactNode> = {
   arrowLeft: <path d="M19 12H5M11 6l-6 6 6 6" />,
   arrowRight: <path d="M5 12h14M13 6l6 6-6 6" />,
   chevronRight: <path d="M9 6l6 6-6 6" />,
+  chevronLeft: <path d="M15 6l-6 6 6 6" />,
+  // First-person view
+  airLeak: (
+    <>
+      <path d="M5 3v7.5l1.8 1.5L5 13.5V21" />
+      <path d="M20 12h-9.5" />
+      <path d="M19.5 7c-3.2.2-5 2.6-8.4 4.4" />
+      <path d="M19.5 17c-3.2-.2-5-2.6-8.4-4.4" />
+    </>
+  ),
+  helmet: (
+    <>
+      <path d="M4.5 14a7.5 7.5 0 0115 0v3.5a2 2 0 01-2 2h-11a2 2 0 01-2-2z" />
+      <path d="M8 11.5h8a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H8a1.5 1.5 0 01-1.5-1.5V13A1.5 1.5 0 018 11.5z" />
+    </>
+  ),
+  overview: (
+    <>
+      <path d="M3 8l9-4 9 4-9 4z" />
+      <path d="M3 8v8l9 4 9-4V8" />
+      <path d="M12 12v8" />
+    </>
+  ),
+  hand: (
+    <>
+      <path d="M9 11V5.5a1.5 1.5 0 013 0V11" />
+      <path d="M12 10V4.5a1.5 1.5 0 013 0V11" />
+      <path d="M15 10.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-1a5 5 0 01-4.2-2.3L4.5 15a1.5 1.5 0 012.4-1.8L9 15V9.5a1.5 1.5 0 013 0" />
+    </>
+  ),
   dot: <circle cx="12" cy="12" r="2.5" />,
   power: (
     <>

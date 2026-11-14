@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react'
 import { gameContent } from '../game'
 import type { MissionState } from '../types/game'
-import { habitatHumLevel, missionCue, radiationClickRate } from './cues'
+import { airLeakLevel, habitatHumLevel, missionCue, radiationClickRate } from './cues'
 import { audioEngine } from './engine'
 
 export function useMissionAudio(mission: MissionState) {
@@ -17,6 +17,7 @@ export function useMissionAudio(mission: MissionState) {
     if (cue) audioEngine.play(cue)
     audioEngine.setRadiation(radiationClickRate(mission))
     audioEngine.setHum(habitatHumLevel(mission))
+    audioEngine.setLeak(airLeakLevel(mission))
   }, [mission])
 
   useEffect(() => () => audioEngine.stopAmbient(), [])

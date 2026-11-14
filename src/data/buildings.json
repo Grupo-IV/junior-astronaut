@@ -84,6 +84,7 @@
       "powerDemandKwhPerDay": 4,
       "shedPriority": 4,
       "stormDoseFactor": 0.1,
+      "occupiedPowerKwhPerDay": 10,
       "summary": "Small room buried under bags of lunar soil (regolith). Blocks ~90% of solar-storm radiation.",
       "benefit": "Protects the crew during solar storms.",
       "tradeoff": "The heaviest item you can bring — and useless on a calm day.",

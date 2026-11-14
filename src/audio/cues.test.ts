@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMissionState, gameContent as content, toLoadout } from '../game'
 import type { MissionState, Modifier } from '../types/game'
-import { habitatHumLevel, missionCue, radiationClickRate, stormDoseRate } from './cues'
+import { airLeakLevel, habitatHumLevel, missionCue, radiationClickRate, stormDoseRate } from './cues'
 
 const CADET = 'shackleton-first-light'
 
@@ -139,5 +139,28 @@ describe('habitat hum', () => {
     expect(habitatHumLevel(s)).toBeLessThan(1)
     s.lastReport!.habitatUnpowered = true
     expect(habitatHumLevel(s)).toBe(0)
+  })
+})
+
+describe('cabin air leak', () => {
+  it('sounds the emergency alarm, above every other alarm except the end of the mission', () => {
+    const s0 = base()
+    const leak = nextDay(s0, (s) => {
+      s.status = 'awaiting-decision'
+      s.pendingEvent = { eventId: 'oxygen_leak', day: s.day }
+      s.lastReport!.habitatUnpowered = true
+    })
+    expect(missionCue(content, s0, leak)).toBe('emergency')
+  })
+
+  it('hisses loudly while open to the cabin, faintly while it seeps, and stops when fixed', () => {
+    const s0 = base()
+    expect(airLeakLevel(s0)).toBe(0)
+    const open = { ...s0, status: 'awaiting-decision' as const, pendingEvent: { eventId: 'oxygen_leak', day: 2 } }
+    expect(airLeakLevel(open)).toBe(1)
+    const seeping = { ...s0, modifiers: [modifier('oxygen_loss', 0.05)] }
+    expect(airLeakLevel(seeping)).toBeGreaterThan(0)
+    expect(airLeakLevel(seeping)).toBeLessThan(1)
+    expect(airLeakLevel({ ...seeping, status: 'failure' as const })).toBe(0)
   })
 })

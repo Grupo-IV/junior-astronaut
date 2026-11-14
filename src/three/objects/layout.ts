@@ -10,7 +10,7 @@ const SLOTS: Record<BuildingId, [number, number][]> = {
   water_recycler: [[8, 0]],
   oxygen_generator: [[8, 5]],
   greenhouse: [[-10, 3]],
-  radiation_shelter: [[0, 10]],
+  radiation_shelter: [[0, 11.5]],
 }
 
 export function slotFor(defId: BuildingId, index: number): [number, number] {

@@ -41,14 +41,17 @@ Sound does not travel through the vacuum on the Moon, so you only hear what the 
 
 | Sound | When it plays | What you see on screen |
 | --- | --- | --- |
-| Two-tone chime, played twice (*caution*) | An equipment failure, leak, dusty arrays or crop failure | Event dialog |
+| Fast high-low siren (*emergency*) | Cabin air leak | Red alarm lights and red visor edge in first person; event dialog |
+| Two-tone chime, played twice (*caution*) | An equipment failure, water leak, dusty arrays or crop failure | Event dialog |
 | Three rising whoops (*warning*) | The habitat has no power, or crew dose passes the warning level | `EMERGENCY` power tag, red entry in the mission log |
 | Falling sweep, static and three dosimeter chirps | A solar storm is detected | Event dialog and the ☢ storm badge |
 | Geiger-counter clicks | While a storm is active. The click rate follows the dose that gets through your shielding, so clicks slow down when the crew is sheltered | Storm badge shows the mSv/day reaching the crew |
 | Fan hum | Habitat life support is running. It quietens when systems are switched off for lack of power and stops when the habitat loses power | Power panel and Systems panel |
+| Hiss of escaping air | While a cabin leak is open to the cabin (loud) or still seeping (faint) | Mist drawn into the breach, frost on the seal, pressure trace on the life-support console, `Air leak` line in the mission log |
 | Short rising or falling melody | Mission complete or mission failed | End-of-mission panel |
+| Clicks, ratchet, hatch motor and latch, short chimes | First person: using a console, choosing and confirming an option, repairing, closing a hatch, the outcome of a decision, the last 5 seconds of a countdown | The console lights up, the selected option gets a glowing frame, the hands do the work, the hatch closes, the outcome card, the countdown bar |
 
-The alarm classes follow the idea behind the International Space Station's Caution & Warning system, where a *warning* means a threat to the crew that needs action now and a *caution* means a system that needs attention soon. Each update plays at most one sound (the most important one), and alarms don't loop.
+The alarm classes follow the idea behind the International Space Station's Caution & Warning system, where an *emergency* (fire, depressurisation, toxic air) means drop everything, a *warning* means a threat to the crew that needs action now and a *caution* means a system that needs attention soon. Each update plays at most one sound (the most important one), and alarms don't loop.
 
 ### Assets and licences
 
@@ -81,21 +84,69 @@ Content texts are addressed by path, for example `events.solar_storm.options.she
 
 Before choosing a mission you pick a rank. The ranks follow the roles in a real crew, and each one gives you different operating margins. The physics stays the same at every rank: crew consumption, radiation and power work exactly the same way.
 
-| Rank | Lander cargo | Surprises | Mission control |
-| --- | --- | --- | --- |
-| Cadet | 115% | fewer | full forecast and planning tips |
-| Mission Specialist | 100% (the mission as designed) | normal | full forecast and planning tips |
-| Flight Engineer | 95% | more | forecast result only |
-| Commander | 90% | many | no forecast, no tips |
+| Rank | Lander cargo | Surprises | Mission control | Time for urgent decisions (first person) |
+| --- | --- | --- | --- | --- |
+| Cadet | 115% | fewer | full forecast and planning tips | 150% |
+| Mission Specialist | 100% (the mission as designed) | normal | full forecast and planning tips | 120% |
+| Flight Engineer | 95% | more | forecast result only | 100% |
+| Commander | 90% | many | no forecast, no tips | 80% |
 
 A mission keeps the rank it was launched with. The rules are in [`src/game/ranks.ts`](src/game/ranks.ts).
+
+## First-person view
+
+The **First person** button in the outpost header puts you inside the habitat module, as the astronaut. The **Management view** button takes you back. The game remembers your choice; the tutorial always runs in the management view.
+
+Inside, the windows look out on the same outpost, so you see the structures, the Sun and the storms. Five stations line the module: **life support** (oxygen generator, water recycler, the hatch to the life-support bay and the spare-kit rack), **plant lab** (greenhouse), **command and airlock** (mission console, way to the radiation shelter), **power** (arrays and batteries, with a window onto the arrays) and **storage** (oxygen bottles, water bags and food packs: what is on the shelves is what you have stored).
+
+- **Look around**: drag with the mouse or a finger. **Walk**: W A S D or the arrow keys, or the stick at the bottom left on touch screens. **Go to a station**: the arrows at the sides of the view, or Q / E. **Use a console**: tap it, the hand button at the bottom, or F.
+- A console has the same actions as the Systems panel (switch on or off, repair with a spare kit or by improvising). Your hand presses the control and the order reaches the mission when it does; a repair with a kit takes one from the rack.
+- The helmet display keeps only the essentials: mission day, days of oxygen, water and food left, and the battery; the radiation dose appears when it matters (a storm, or a high dose). Anything that needs attention shows as an alert at the top. The mission log shows as subtitles and opens in full with **Log**.
+- You walk as a body, not a floating camera: walls, hatches, racks and bunks stop you and you slide along them. Doors let you through when they are open: the doorway of the life-support bay closes when its hatch is sealed, and the airlock at the command station leads to the radiation shelter.
+
+### Emergencies and decisions
+
+When an event happens in first person, it is staged: the alarm sounds and the cabin lights change, your hands react, the camera goes to the problem, and a cinematic decision appears with the event, the facts that matter (oxygen left, spare kits, battery…) and two to four options (A–D or 1–4 and Enter, or tap twice). When the situation cannot wait (oxygen leak, water leak, solar storm) a countdown runs; it pauses while the page is hidden. If time runs out, the delay has a cost and the event's fallback runs, as the base's automatic systems would. Your hands then carry out the order, the engine applies it at that moment, and an outcome card shows what really changed in the stores and in the habitat.
+
+Every option is the event's real option from [`src/data/events.json`](src/data/events.json); first person changes how a decision is shown, never what it does. In the management view the same events open the usual event dialog, without a countdown.
+
+The fully staged scenario is the **oxygen leak** (`oxygen_leak`): a cracked hull seal in the life-support bay.
+
+| Option | What happens in the mission |
+| --- | --- |
+| Repair the leak right now | −1 kg O₂. With a spare kit (used): 90% fixed, otherwise a slow leak (−5%/day, 2 days). Without: 45% fixed, otherwise the leak gets worse (−10%/day, 3 days). |
+| Seal off the life-support bay | The hatch closes. 15% of stored oxygen stays in the bay, and the oxygen generator delivers 50% for 3 days. With empty batteries the hatch is closed by hand and holds 60% of the time. |
+| Move the crew to the shelter module | Needs a working shelter. −6 kg O₂ to refill the habitat, +10 kWh/day and greenhouse at 50% for a day. The leak is fixed. |
+| Run the leak diagnostics first | −2 kg O₂, then a second decision (**Leak located**) where a repair is certain with a kit, 75% without. |
+
+Code: [`src/immersive/`](src/immersive) (shared vocabulary and staging rules, no 3D), [`src/three/firstPerson/`](src/three/firstPerson) (habitat interior, hands, camera), [`src/components/immersive/`](src/components/immersive) (helmet display, consoles, decision and outcome). During development, `/?preview=outpost&event=oxygen_leak&day=7&view=fp&tour=0` opens a mission whose next day brings the leak.
+
+### Radiation shelter
+
+The shelter is a pressurised room buried under a mound of regolith bags, with a vestibule and a hermetic hatch, a radiation sign, a status light (blue: ready · amber: storm outside · green: crew inside and protected) and a dosimeter mast whose light blinks with the dose rate. In first person you can go in through the airlock (command station): inside are bunks for four, supplies, a maintenance panel that shows the bags of lunar soil that do the shielding, and a monitor with the storm dose outside and the dose behind the walls.
+
+During a solar storm you can move the crew into the shelter at any time, not only in the storm decision: from the alert at the top, from the shelter in the Systems panel, from the command station or inside the shelter. The protection comes from the shelter's data in [`src/data/buildings.json`](src/data/buildings.json): `stormDoseFactor` (0.1: 90% of the storm dose is blocked) and `occupiedPowerKwhPerDay` (10 kWh/day of life support while the crew is inside, the same as the storm decision). The crew stays protected until the storm ends or you take them out, and the greenhouse is left untended meanwhile. The rules are in [`src/game/simulation/shelter.ts`](src/game/simulation/shelter.ts).
+
+### Collisions
+
+Bodies are circles on the floor plan (the game has no falling or tumbling, so no physics library is needed): obstacles are circles and boxes, rooms are walls with doorways, and a door is a wall piece that is switched on while it is closed. Every move goes in small steps that are pushed back to the nearest free spot, so a body slides along walls and round corners, cannot tunnel through a thin wall at any speed, and stops at the last free spot rather than squeezing into a gap narrower than itself. The crewmate outside follows routes from an A* navigation grid over the outpost's floor plan and goes in through the real doors: to the shelter hatch during a storm, to the habitat airlock when the habitat loses power. Code: [`src/three/physics/`](src/three/physics).
+
+## Interface
+
+The management view shows what you need to act on, and puts the rest one tap away:
+
+- each supply is one line with how many days it lasts; its LOW / CRITICAL tag appears only when there is a problem, and the kilograms, daily balance, kWh and the science are under **Details**;
+- the radiation dose comes forward during storms or once it is high;
+- alerts appear in the header only when something needs attention (a storm with a button to take shelter, supplies running out, a power cut, a broken machine, a leak, a shadow coming tomorrow while the batteries are not full), most urgent first.
 
 ## Visuals
 
 The game ships no image files. Everything is drawn in code:
 
 - The Moon, the regolith, the Earth, the Milky Way and the hardware textures are generated in the browser, with a fixed seed so the scene looks the same every time ([`src/three/textures/`](src/three/textures)).
+- The lunar sky is black down to a sharp horizon: no blue sky, no haze. Stars are small round points in brightness classes (each fainter class about three times more numerous), crowded towards the Milky Way, which is a dim, desaturated band along the galactic plane with a brighter, warmer centre split by dust lanes and a few faint nebulae. With sunlit ground in view the faint stars and the Milky Way fade (as they would to the eye or a camera); in a shadow period they come back. The Sun and the Earth keep a small, restrained glow.
 - The 3D outpost has polar lighting with long shadows, crater fields and boulders, horizon massifs, a crew lander, a rover with tyre tracks, hoses between modules, and an astronaut who walks with a low-gravity lope.
+- The first-person habitat interior and the astronaut's gloved hands are built from simple shapes and animated in code: each gesture (press, point, grab, repair, turn a hatch wheel, react to an alarm, check the wrist computer) follows its target in the 3D scene.
 - Icons, rank insignia, the mission emblem, the mascot and the mission artwork are original SVGs ([`src/components/ui/Icon.tsx`](src/components/ui/Icon.tsx) and [`src/components/art/`](src/components/art)). No emoji are used.
 
 During development you can open a screen directly with `?preview=` (only in `npm run dev`): `/?preview=outpost&tour=0`, `/?preview=event`, `/?preview=result` or `/?preview=setup&rank=commander`.

@@ -29,12 +29,12 @@ export function DecisionOptions({ mission, eventId, onChoose }: { mission: Missi
               <span className="mt-2 text-xs text-good-ink">
                 <Icon name="plus" className="mr-1" />
                 <span className="sr-only">{t('decision.benefit')} </span>
-                <GlossaryText text={o.benefit} />
+                <GlossaryText text={o.benefit} plain />
               </span>
               <span className="mt-1 text-xs text-serious">
                 <Icon name="minus" className="mr-1" />
                 <span className="sr-only">{t('decision.cost')} </span>
-                <GlossaryText text={o.cost} />
+                <GlossaryText text={o.cost} plain />
               </span>
               {!a.available && a.reason && (
                 <span className="mt-2 text-xs font-semibold text-critical">

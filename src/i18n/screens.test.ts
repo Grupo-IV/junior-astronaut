@@ -27,6 +27,12 @@ function runUntil(stop: (s: MissionState) => boolean): MissionState {
 }
 
 const atEvent = runUntil((s) => s.status === 'awaiting-decision')
+
+/** The cadet mission with an oxygen leak on day 2 (the first fully staged emergency). */
+function atLeak(): MissionState {
+  const content = { ...gameContent, missions: gameContent.missions.map((m) => ({ ...m, scheduledEvents: [{ day: 2, eventId: 'oxygen_leak' }] })) }
+  return advanceDay(content, createMissionState(content, MISSION.id, toLoadout({ ...MISSION.recommendedLoadout, spare_parts: 1 }), 3))
+}
 const finished = runUntil((s) => s.status === 'success' || s.status === 'failure')
 
 const SCREENS: { name: string; state: () => AppState }[] = [
@@ -44,6 +50,9 @@ const SCREENS: { name: string; state: () => AppState }[] = [
     },
   },
   { name: 'result', state: () => ({ ...initialAppState(), screen: 'result', mission: finished }) },
+  { name: 'first person', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: createMissionState(gameContent, MISSION.id, loadout, 3) }) },
+  { name: 'first person decision', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: atEvent }) },
+  { name: 'first person oxygen leak', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: atLeak() }) },
 ]
 
 function render(state: AppState): string {

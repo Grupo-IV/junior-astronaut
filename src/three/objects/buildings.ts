@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import type { BuildingId } from '../../types/game'
 import type { SceneBuilding, VisualStatus } from '../scene/sceneModel'
 import { seededRandom } from '../textures/noise'
+import { hazardStripeTexture, trefoilTexture } from '../textures/textures'
 import { halo, materials, mesh } from './materials'
 
 const STATUS_COLOR: Record<VisualStatus, number> = {
@@ -38,6 +39,12 @@ export class BuildingVisual {
   private growGlow?: THREE.Sprite
   private batteryBars: THREE.Mesh[] = []
   private fans: THREE.Object3D[] = []
+  private shelterStatus?: THREE.MeshStandardMaterial
+  private shelterWindow?: THREE.MeshStandardMaterial
+  private shelterSign?: THREE.MeshStandardMaterial
+  private doseLight?: THREE.MeshStandardMaterial
+  private doorLight?: THREE.SpotLight
+  private doseRate = 0
 
   constructor(readonly uid: string, readonly defId: BuildingId) {
     this.group.userData.uid = uid
@@ -210,25 +217,37 @@ export class BuildingVisual {
   }
 
   /** A shelter buried under rings of regolith-filled bags, with a reinforced entrance. */
+  /**
+   * Radiation shelter: a small pressurised room buried under a mound of
+   * regolith bags held by metal bands. A short pressurised vestibule with a
+   * hermetic hatch leads in (facing +x); a mast outside carries the
+   * dosimeter that measures the storm. Lights tell the crew what is going on:
+   * blue = ready, amber = storm outside, green = crew inside and protected.
+   */
   private buildShelter(): number {
     const m = materials()
     const rand = seededRandom(23)
+    // Sintered regolith pad.
+    this.group.add(mesh(new THREE.CylinderGeometry(4.35, 4.5, 0.14, 48), m.darkMetal, 0, 0.07, 0))
+    // Mound of regolith bags around the buried room: the actual shielding.
     const bagGeo = new THREE.CapsuleGeometry(0.3, 0.62, 4, 8)
     bagGeo.rotateZ(Math.PI / 2)
-    const rows = 6
-    let count = 0
-    const bags = new THREE.InstancedMesh(bagGeo, m.bag, 400)
+    const bags = new THREE.InstancedMesh(bagGeo, m.bag, 700)
     const mtx = new THREE.Matrix4()
     const q = new THREE.Quaternion()
+    let count = 0
+    const rows = 7
     for (let r = 0; r < rows; r++) {
-      const radius = 3.3 - r * 0.46
-      const y = 0.27 + r * 0.4
+      // Upper rows stay wide: the pressurised room inside is 3.5 m across.
+      const radius = 3.95 - r * 0.3
+      const y = 0.27 + r * 0.38
       const n = Math.floor((2 * Math.PI * radius) / 0.78)
       for (let i = 0; i < n; i++) {
         const a = (i / n) * Math.PI * 2 + (r % 2) * 0.2
-        if (Math.abs(a - Math.PI / 2) < 0.35 && r < 3) continue // doorway
-        q.setFromEuler(new THREE.Euler(0, -a + (rand() - 0.5) * 0.15, (rand() - 0.5) * 0.1))
-        mtx.compose(new THREE.Vector3(Math.cos(a) * radius, y, Math.sin(a) * radius), q, new THREE.Vector3(1, 0.72 + rand() * 0.12, 1.15))
+        const fromDoor = Math.min(a, Math.PI * 2 - a)
+        if (fromDoor < 0.42 && r < 5) continue // doorway for the vestibule
+        q.setFromEuler(new THREE.Euler(0, -a + (rand() - 0.5) * 0.12, (rand() - 0.5) * 0.08))
+        mtx.compose(new THREE.Vector3(Math.cos(a) * radius, y, Math.sin(a) * radius), q, new THREE.Vector3(1, 0.72 + rand() * 0.1, 1.15))
         bags.setMatrixAt(count++, mtx)
       }
     }
@@ -236,13 +255,81 @@ export class BuildingVisual {
     bags.castShadow = true
     bags.receiveShadow = true
     this.group.add(bags)
-    const cap = mesh(new THREE.SphereGeometry(1.25, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), m.bag, 0, 2.55, 0)
-    this.group.add(cap)
-    const frame = mesh(new THREE.BoxGeometry(1.4, 1.6, 0.25), m.metal, 0, 0.8, 3.25)
-    const door = mesh(new THREE.BoxGeometry(1, 1.3, 0.06), m.darkMetal, 0, 0.75, 3.39)
-    const sign = mesh(new THREE.PlaneGeometry(0.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x1a1200, emissive: 0xffc23d, emissiveIntensity: 1.6 }), 0, 1.75, 3.39, false)
-    this.group.add(frame, door, sign)
-    return 4.2
+    // Restraint bands keep the bags in place.
+    for (const [y, radius] of [[0.75, 3.68], [1.5, 3.3], [2.25, 2.9]] as const) {
+      const band = mesh(new THREE.TorusGeometry(radius, 0.035, 6, 64), m.metal, 0, y, 0)
+      band.rotation.x = Math.PI / 2
+      this.group.add(band)
+    }
+    // Cap: a thick sintered plate, a vent and a radiator.
+    this.group.add(mesh(new THREE.CylinderGeometry(2.05, 2.25, 0.32, 32), m.bag, 0, 2.95, 0))
+    this.group.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 10), m.metal, -0.5, 3.4, 0.3))
+    const radiator = mesh(new THREE.BoxGeometry(1.1, 0.04, 0.6), m.radiator, 0.4, 3.35, -0.4)
+    radiator.rotation.z = 0.3
+    this.group.add(radiator)
+
+    // Pressurised vestibule and hermetic hatch.
+    const vest = mesh(new THREE.CylinderGeometry(0.95, 0.95, 1.7, 32), m.white, 3.45, 1.05, 0)
+    vest.rotation.z = Math.PI / 2
+    this.group.add(vest)
+    for (const x of [2.85, 3.95]) {
+      const ring = mesh(new THREE.TorusGeometry(0.97, 0.05, 8, 32), m.blue, x, 1.05, 0)
+      ring.rotation.y = Math.PI / 2
+      this.group.add(ring)
+    }
+    this.group.add(mesh(new THREE.BoxGeometry(1.7, 0.12, 1.5), m.darkMetal, 3.45, 0.06, 0))
+    const stripes = hazardStripeTexture()
+    stripes.repeat.set(4, 1)
+    const hazard = new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.6 })
+    const frameRing = mesh(new THREE.TorusGeometry(0.8, 0.09, 10, 40), hazard, 4.32, 1.05, 0)
+    frameRing.rotation.y = Math.PI / 2
+    const hatch = mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.1, 40), m.darkMetal, 4.34, 1.05, 0)
+    hatch.rotation.z = Math.PI / 2
+    const seal = mesh(new THREE.TorusGeometry(0.71, 0.03, 8, 40), m.dark, 4.4, 1.05, 0)
+    seal.rotation.y = Math.PI / 2
+    const wheel = mesh(new THREE.TorusGeometry(0.2, 0.025, 8, 28), m.metal, 4.44, 0.95, 0)
+    wheel.rotation.y = Math.PI / 2
+    this.group.add(frameRing, hatch, seal, wheel)
+    for (let i = 0; i < 3; i++) {
+      const spoke = mesh(new THREE.BoxGeometry(0.02, 0.4, 0.02), m.metal, 4.44, 0.95, 0)
+      spoke.rotation.x = (i * Math.PI) / 3
+      this.group.add(spoke)
+    }
+    this.shelterWindow = new THREE.MeshStandardMaterial({ color: 0x0d1016, emissive: 0xffcf8a, emissiveIntensity: 0.1, roughness: 0.2 })
+    const port = mesh(new THREE.CircleGeometry(0.12, 20), this.shelterWindow, 4.4, 1.42, 0, false)
+    port.rotation.y = Math.PI / 2
+    this.group.add(port)
+    // Radiation sign above the hatch, and the status light strip.
+    const sign = mesh(new THREE.CircleGeometry(0.28, 32), new THREE.MeshStandardMaterial({ map: trefoilTexture(), emissive: 0xffffff, emissiveMap: trefoilTexture(), emissiveIntensity: 0.25, roughness: 0.5 }), 4.3, 2.2, 0, false)
+    sign.rotation.y = Math.PI / 2
+    this.shelterSign = sign.material as THREE.MeshStandardMaterial
+    this.shelterStatus = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x5aa9ff, emissiveIntensity: 2 })
+    const strip = mesh(new THREE.BoxGeometry(0.05, 0.06, 1.3), this.shelterStatus, 4.36, 1.92, 0, false)
+    this.group.add(sign, strip)
+    // Dosimeter mast: the sensor that sees the storm, with a light that blinks with the dose rate.
+    this.group.add(mesh(new THREE.CylinderGeometry(0.05, 0.06, 3.2, 8), m.metal, 3.0, 1.6, -2.6))
+    this.group.add(mesh(new THREE.BoxGeometry(0.34, 0.26, 0.26), m.white, 3.0, 3.25, -2.6))
+    this.group.add(mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.6, 6), m.metal, 3.1, 3.65, -2.55))
+    this.doseLight = new THREE.MeshStandardMaterial({ color: 0x220000, emissive: 0xff4040, emissiveIntensity: 0 })
+    this.group.add(mesh(new THREE.SphereGeometry(0.05, 10, 10), this.doseLight, 3.0, 3.25, -2.46, false))
+    // A floodlight over the hatch.
+    this.doorLight = new THREE.SpotLight(0xfff0d8, 0, 9, Math.PI / 4, 0.5, 1.5)
+    this.doorLight.position.set(4.6, 2.6, 0)
+    this.doorLight.target.position.set(5.6, 0, 0)
+    this.group.add(this.doorLight, this.doorLight.target)
+    this.group.add(mesh(new THREE.BoxGeometry(0.3, 0.12, 0.2), m.darkMetal, 4.5, 2.6, 0))
+    return 4.4
+  }
+
+  /** Shelter lights: what the crew can read from outside, from the mission state. */
+  setShelter(state: { crewInside: boolean; storm: boolean; outsideRate: number; operational: boolean }) {
+    if (!this.shelterStatus) return
+    const color = !state.operational ? 0x6b7280 : state.crewInside ? 0x3ddc84 : state.storm ? 0xffb020 : 0x5aa9ff
+    this.shelterStatus.emissive.setHex(color)
+    this.shelterWindow!.emissiveIntensity = state.crewInside ? 2.2 : 0.1
+    this.shelterSign!.emissiveIntensity = state.storm ? 0.9 : 0.25
+    this.doorLight!.intensity = state.operational ? 30 : 0
+    this.doseRate = state.outsideRate
   }
 
   setState(b: SceneBuilding) {
@@ -283,5 +370,7 @@ export class BuildingVisual {
     }
     for (const tr of this.trackers) tr.rotation.y = Math.atan2(sunDirection.x, sunDirection.z)
     if (this.status === 'running') for (const f of this.fans) f.rotation.y = t * 8
+    // The dosimeter blinks faster the stronger the storm (silent outside: there is no air).
+    if (this.doseLight) this.doseLight.emissiveIntensity = this.doseRate > 0 && (t * (1 + this.doseRate / 15)) % 1 < 0.15 ? 4 : 0
   }
 }
