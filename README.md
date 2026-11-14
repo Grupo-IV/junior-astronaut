@@ -11,6 +11,8 @@ Each choice has a trade-off: more batteries mean fewer supplies, and more shield
 
 You won't find these engineering trade-offs in a chart or a report here. You play through them.
 
+For the full project presentation (problem, solution, gameplay, scientific sources, architecture and team), see [docs/space-apps-project.md](docs/space-apps-project.md).
+
 ## Get Started
 
 You need [Node.js](https://nodejs.org/) 20 or newer.
