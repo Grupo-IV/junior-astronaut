@@ -1,4 +1,5 @@
 import { useApp } from '../../app/state/AppContext'
+import { SoundToggle } from '../ui/SoundToggle'
 import { Button } from '../ui/ui'
 
 const LOOP = ['Plan', 'Build', 'Operate', 'Event', 'Decide', 'Consequence', 'Learn', 'Adapt']
@@ -23,6 +24,7 @@ export function MainMenu() {
         <Button variant="primary" className="px-8 py-3 text-base" onClick={() => dispatch({ type: 'navigate', screen: 'select' })}>
           🚀 Start mission
         </Button>
+        <SoundToggle className="px-5 py-3" />
       </div>
       <ol className="mt-12 flex max-w-2xl flex-wrap justify-center gap-2 text-xs text-ink-3" aria-label="How the game works">
         {LOOP.map((step, i) => (

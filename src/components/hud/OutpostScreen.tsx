@@ -4,11 +4,14 @@
  */
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useApp } from '../../app/state/AppContext'
+import { stormDoseRate } from '../../audio/cues'
+import { useMissionAudio } from '../../audio/useMissionAudio'
 import { gameContent, getMission, illuminationPeriod } from '../../game'
 import type { MissionState } from '../../types/game'
 import { ConsequencePanel } from '../decisions/ConsequencePanel'
 import { EventModal } from '../events/EventModal'
 import { ResourcePanel } from '../resources/ResourcePanel'
+import { SoundToggle } from '../ui/SoundToggle'
 import { Button, fmt } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 import { MissionLog } from './MissionLog'
@@ -29,6 +32,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(0)
   const onSelect = useCallback((uid: string | null) => setSelectedUid(uid), [])
+  useMissionAudio(mission)
 
   const finished = mission.status === 'success' || mission.status === 'failure'
   const blocked = mission.status !== 'running' || state.consequenceIndex !== null
@@ -69,7 +73,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
           </div>
           {storm && (
             <p className="rounded-lg border border-critical/50 bg-critical/15 px-3 py-1 text-sm font-semibold text-critical" role="status">
-              ☢ Solar storm · {storm.remainingDays} day(s)
+              ☢ Solar storm · {fmt(stormDoseRate(mission), 1)} mSv/day reaching the crew · {storm.remainingDays} day(s)
             </p>
           )}
           {!finished ? (
@@ -89,6 +93,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
               {mission.status === 'success' ? '🏁 Mission report' : '📋 What went wrong?'}
             </Button>
           )}
+          <SoundToggle />
           <Button
             variant="ghost"
             onClick={() => {

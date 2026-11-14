@@ -32,3 +32,26 @@ You need [Node.js](https://nodejs.org/) 20 or newer.
 3. Open <http://localhost:5173> in your browser and start your first mission.
 
 To run the tests, use `npm test`.
+
+## Sound
+
+The game uses quiet sound cues to back up what is already on screen. Sound is optional: every cue has a visual equivalent, so you can play the whole mission muted. Use the **🔊 Sound on / 🔇 Sound off** button in the main menu or in the outpost header. The game remembers your choice in this browser.
+
+Sound does not travel through the vacuum on the Moon, so you only hear what the crew would hear inside the habitat:
+
+| Sound | When it plays | What you see on screen |
+| --- | --- | --- |
+| Two-tone chime, played twice (*caution*) | An equipment failure, leak, dusty arrays or crop failure | Event dialog |
+| Three rising whoops (*warning*) | The habitat has no power, or crew dose passes the warning level | `EMERGENCY` power tag, red entry in the mission log |
+| Falling sweep, static and three dosimeter chirps | A solar storm is detected | Event dialog and the ☢ storm badge |
+| Geiger-counter clicks | While a storm is active. The click rate follows the dose that gets through your shielding, so clicks slow down when the crew is sheltered | Storm badge shows the mSv/day reaching the crew |
+| Fan hum | Habitat life support is running. It quietens when systems are switched off for lack of power and stops when the habitat loses power | Power panel and Systems panel |
+| Short rising or falling melody | Mission complete or mission failed | End-of-mission panel |
+
+The alarm classes follow the idea behind the International Space Station's Caution & Warning system, where a *warning* means a threat to the crew that needs action now and a *caution* means a system that needs attention soon. Each update plays at most one sound (the most important one), and alarms don't loop.
+
+### Assets and licences
+
+The game has no audio files. All sounds are generated in the browser by [`src/audio/engine.ts`](src/audio/engine.ts) with the standard [Web Audio API](https://developer.mozilla.org/docs/Web/API/Web_Audio_API), using oscillators, filtered noise and gain envelopes. They are original work by Grupo 4 and use the same licence as the rest of the code (see [LICENSE](LICENSE)). There are no third-party sound assets to credit.
+
+If you add recorded audio later, put it in `public/audio/` and list every file here with its author, source URL and licence. Use only public-domain or CC0/CC BY sounds; NASA audio is generally not copyrighted, but check NASA's media usage guidelines before you use it.
