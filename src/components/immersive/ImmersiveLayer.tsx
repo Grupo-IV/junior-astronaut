@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../../app/state/AppContext'
 import { audioEngine, type Fx } from '../../audio/engine'
+import { useRelaxed } from '../../app/settings/pace'
 import { crewInShelter, decisionTimeLimit, eventDef, gameContent, getMission, shelterStatus } from '../../game'
 import { alertLevel, hasTag, leakState, optionHands, stagingFor } from '../../immersive/staging'
 import { STATION_ORDER, type HandAction, type HandRequest, type ImmersiveView, type StationId } from '../../immersive/types'
@@ -53,12 +54,15 @@ export function ImmersiveLayer({
   time,
   viewToggle,
   onMenu,
+  holdEvents = false,
 }: {
   mission: MissionState
   view: ImmersiveView | null
   time: TimeControls
   viewToggle: ReactNode
   onMenu: () => void
+  /** The day's results are still being shown: the next event waits. */
+  holdEvents?: boolean
 }) {
   const { state, dispatch } = useApp()
   const { t, m, content } = useI18n()
@@ -128,6 +132,17 @@ export function ImmersiveLayer({
       const { busy: b, view: v, station: here, mission: current } = live.current
       if (b) return
       const where = panel ?? here
+      if (action.kind === 'eva') {
+        // Two crewmates suit up and go out through the airlock: a wave, then the airlock control.
+        setBusy(true)
+        const timing = v ? v.playHands({ action: 'beckon', station: 'command', focus: 'airlock' }) : { impactMs: 0, totalMs: 0 }
+        later(timing.impactMs, () => {
+          audioEngine.fx('seal')
+          dispatch({ type: 'goOnEva' })
+        })
+        later(timing.totalMs, () => setBusy(false))
+        return
+      }
       if (action.kind === 'toShelter' || action.kind === 'toHabitat') {
         // Through the airlock or the shelter hatch: a hand on the door, then the walk.
         const shelter = shelterStatus(gameContent, current)
@@ -224,7 +239,7 @@ export function ImmersiveLayer({
 
   useEffect(() => {
     const key = pendingKey(mission)
-    if (!key || mission.status !== 'awaiting-decision' || phase !== 'explore' || staged.current === key) return
+    if (!key || holdEvents || mission.status !== 'awaiting-decision' || phase !== 'explore' || staged.current === key) return
     staged.current = key
     setPanel(null)
     setLogOpen(false)
@@ -245,7 +260,7 @@ export function ImmersiveLayer({
       const timing = view.playHands({ action: 'point', station: staging.station, focus: staging.focus })
       later(timing.totalMs + 200, () => setPhase((p) => (p === 'staging' ? 'decide' : p)))
     })
-  }, [mission, phase, view, later])
+  }, [mission, phase, view, later, holdEvents])
 
   const skipStaging = () => {
     timers.current.forEach((id) => window.clearTimeout(id))
@@ -345,6 +360,7 @@ export function ImmersiveLayer({
   const alert = alertLevel(mission)
   const finished = mission.status === 'success' || mission.status === 'failure'
   const def = getMission(gameContent, mission.missionId)
+  const relaxed = useRelaxed()
   const seconds = mission.pendingEvent ? decisionTimeLimit(gameContent, mission.pendingEvent.eventId, mission.rank) : null
 
   return (
@@ -405,7 +421,7 @@ export function ImmersiveLayer({
       )}
 
       {phase === 'decide' && mission.status === 'awaiting-decision' && mission.pendingEvent && (
-        <CinematicDecision key={pendingKey(mission)} mission={mission} seconds={seconds} onConfirm={decide} />
+        <CinematicDecision key={`${pendingKey(mission)}:${relaxed}`} mission={mission} seconds={relaxed ? null : seconds} onConfirm={decide} />
       )}
 
       {phase === 'acting' && (

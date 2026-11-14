@@ -8,6 +8,7 @@
  * (see ImmersiveLayer). When the countdown ends the event's fallback runs.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { setRelaxed } from '../../app/settings/pace'
 import { audioEngine } from '../../audio/engine'
 import { eventDef, gameContent, optionAvailability } from '../../game'
 import { stagingFor, type ContextFact } from '../../immersive/staging'
@@ -215,6 +216,9 @@ export function CinematicDecision({
             <span className="min-w-[3.5rem] text-right font-mono text-sm font-bold tabular-nums" style={{ color: timerTone }}>
               {t('cine.timer', { seconds: Math.ceil(left) })}
             </span>
+            <button type="button" className="min-h-9 rounded-lg border border-line px-2 text-[11px] text-ink-2 hover:text-ink" onClick={() => setRelaxed(true)} title={t('pace.about')}>
+              <Icon name="pause" /> {t('cine.timerOff')}
+            </button>
           </div>
         ) : (
           <p className="text-xs text-ink-3">{t('cine.noTimer')}</p>

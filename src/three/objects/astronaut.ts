@@ -12,9 +12,20 @@
  */
 import * as THREE from 'three'
 import type { CollisionWorld, NavGrid, Point } from '../physics/collision'
+import { LunarGait, maxTraction, OUTDOOR_LOPE } from '../physics/locomotion'
 
 const BODY_R = 0.35
-const SPEED = 1.4
+
+/** What a spacewalk is doing, for the progress shown to the player. */
+export interface EvaProgress {
+  /** 0 suit up and out, 1 walk out, 2 collect, 3 walk back, 4 back inside. */
+  step: number
+  progress: number
+  /** Distance to walk to the sample site, m. */
+  distance: number
+}
+
+const COLLECT_SECONDS = 3
 
 function part(geometry: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh {
   const m = new THREE.Mesh(geometry, material)
@@ -86,8 +97,23 @@ export class Astronaut {
   private path: Point[] = []
   private refuge: Point | null = null
   private lastDoor: Point = { x: 0, z: 6 }
-  private mode: 'wander' | 'toRefuge' | 'inside' = 'wander'
+  private mode: 'wander' | 'toRefuge' | 'inside' | 'eva' = 'wander'
   private stuck = 0
+  private gait = new LunarGait(OUTDOOR_LOPE)
+  private heading = 0
+  private eva: {
+    phase: 'out' | 'collect' | 'back'
+    site: Point
+    door: Point
+    outLength: number
+    walked: number
+    collectTime: number
+    onProgress: (p: EvaProgress) => void
+    onCollected: (site: Point) => void
+    onDone: (completed: boolean) => void
+  } | null = null
+  /** A boot came down: for the regolith dust. */
+  onLanding: (x: number, z: number, vx: number, vz: number) => void = () => {}
 
   /** Floor plan and route finder of the outpost (rebuilt when structures change). */
   setNavigation(world: CollisionWorld, grid: NavGrid) {
@@ -112,6 +138,7 @@ export class Astronaut {
     const same = (a: Point | null, b: Point | null) => (a && b ? a.x === b.x && a.z === b.z : a === b)
     if (same(door, this.refuge)) return
     this.refuge = door
+    if (door && this.eva) this.endEva(false)
     if (door) {
       this.mode = this.mode === 'inside' ? 'inside' : 'toRefuge'
       if (this.mode === 'toRefuge') this.plan(door)
@@ -143,6 +170,42 @@ export class Astronaut {
     this.group.visible = !this.indoors && !this.hidden
   }
 
+  /**
+   * Two crewmates go out of the airlock at `door`, walk to `site`, collect a
+   * sample and walk back. Progress is reported from the real walk.
+   */
+  startEva(door: Point, site: Point, handlers: { onProgress: (p: EvaProgress) => void; onCollected: (site: Point) => void; onDone: (completed: boolean) => void }) {
+    if (this.eva) this.endEva(false)
+    this.mode = 'eva'
+    this.hidden = false
+    this.group.position.set(door.x, this.heightAt(door.x, door.z), door.z)
+    this.gait = new LunarGait(OUTDOOR_LOPE)
+    this.plan(site)
+    const length = this.pathLength()
+    this.eva = { phase: 'out', site, door, outLength: Math.max(1, length), walked: 0, collectTime: 0, ...handlers }
+    this.applyVisibility()
+    handlers.onProgress({ step: 1, progress: 0.05, distance: Math.round(length) })
+  }
+
+  private pathLength() {
+    let from = { x: this.group.position.x, z: this.group.position.z }
+    let total = 0
+    for (const p of this.path) {
+      total += Math.hypot(p.x - from.x, p.z - from.z)
+      from = p
+    }
+    return total
+  }
+
+  private endEva(completed: boolean) {
+    const eva = this.eva
+    this.eva = null
+    if (this.mode === 'eva') this.mode = 'wander'
+    this.path = []
+    this.wait = 1.5
+    eva?.onDone(completed)
+  }
+
   private plan(to: Point) {
     const from = { x: this.group.position.x, z: this.group.position.z }
     this.path = this.grid ? this.grid.path(from, to) : [to]
@@ -152,8 +215,16 @@ export class Astronaut {
   update(dt: number) {
     if (this.mode === 'inside') return
     const pos = this.group.position
+    if (this.eva?.phase === 'collect') {
+      this.updateCollect(dt)
+      return
+    }
     const next = this.path[0]
     if (!next) {
+      if (this.eva) {
+        this.arriveEva()
+        return
+      }
       if (this.mode === 'toRefuge' && this.refuge) {
         // At the door: go in.
         this.lastDoor = { ...this.refuge }
@@ -161,7 +232,8 @@ export class Astronaut {
         this.applyVisibility()
         return
       }
-      this.idle(dt)
+      this.move(dt, 0, 0)
+      if (this.gait.speed < 0.05) this.idle(dt)
       if (this.wait <= 0) {
         const t = this.targets[Math.floor(Math.random() * this.targets.length)]
         this.plan({ x: t.x, z: t.z })
@@ -172,29 +244,98 @@ export class Astronaut {
     const dx = next.x - pos.x
     const dz = next.z - pos.z
     const dist = Math.hypot(dx, dz)
-    if (dist < 0.15) {
+    const last = this.path.length === 1
+    // Corners are taken without stopping; the final point is approached with room to brake.
+    if (dist < (last ? 0.12 : 0.6)) {
       this.path.shift()
       return
     }
-    const step = Math.min(dist, SPEED * dt)
+    const remaining = last ? dist : dist + 1
+    // Braking distance on the Moon: v² = 2·a·d, with a set by the boots' grip.
+    const brake = Math.sqrt(2 * maxTraction(OUTDOOR_LOPE) * 0.9 * remaining)
+    const speed = Math.min(OUTDOOR_LOPE.maxSpeed, brake)
     const before = { x: pos.x, z: pos.z }
-    const to = this.world ? this.world.move(pos.x, pos.z, (dx / dist) * step, (dz / dist) * step, BODY_R) : { x: pos.x + (dx / dist) * step, z: pos.z + (dz / dist) * step }
-    pos.x = to.x
-    pos.z = to.z
+    this.move(dt, (dx / dist) * speed, (dz / dist) * speed)
+    const moved = Math.hypot(pos.x - before.x, pos.z - before.z)
+    if (this.eva) this.trackEva(moved)
     // Pushed back by something (a structure that appeared): find another way.
-    if (Math.hypot(to.x - before.x, to.z - before.z) < step * 0.3) {
+    if (moved < this.gait.speed * dt * 0.3 && this.gait.speed > 0.2) {
       this.stuck += dt
       if (this.stuck > 0.8) this.plan(this.path[this.path.length - 1])
     } else this.stuck = 0
-    this.phase += dt * 5.5
-    const s = Math.sin(this.phase)
-    pos.y = this.heightAt(pos.x, pos.z) + Math.abs(s) * 0.22 // low-gravity hop
-    this.legs[0].rotation.x = s * 0.55
-    this.legs[1].rotation.x = -s * 0.55
-    this.arms[0].rotation.x = -s * 0.45
-    this.arms[1].rotation.x = s * 0.45
-    this.body.rotation.x = 0.12
-    this.group.rotation.y = Math.atan2(dx, dz)
+  }
+
+  /** One frame of lunar gait towards (wantX, wantZ) m/s, through the collision world. */
+  private move(dt: number, wantX: number, wantZ: number) {
+    const pos = this.group.position
+    const f = this.gait.step(dt, wantX, wantZ)
+    if (Math.hypot(f.vx, f.vz) > 0.001) {
+      const to = this.world ? this.world.move(pos.x, pos.z, f.vx * dt, f.vz * dt, BODY_R) : { x: pos.x + f.vx * dt, z: pos.z + f.vz * dt }
+      pos.x = to.x
+      pos.z = to.z
+    }
+    pos.y = this.heightAt(pos.x, pos.z) + f.height
+    if (f.landed) this.onLanding(pos.x, pos.z, f.vx, f.vz)
+    // Turn towards where the body is going, as fast as the grip allows (no instant pivots).
+    const speed = Math.hypot(f.vx, f.vz)
+    if (speed > 0.1) {
+      const target = Math.atan2(f.vx, f.vz)
+      let d = target - this.heading
+      while (d > Math.PI) d -= Math.PI * 2
+      while (d < -Math.PI) d += Math.PI * 2
+      const maxTurn = Math.max(2.5, maxTraction(OUTDOOR_LOPE) / Math.max(0.3, speed) * 2) * dt
+      this.heading += Math.max(-maxTurn, Math.min(maxTurn, d))
+      this.group.rotation.y = this.heading
+    }
+    const k = Math.min(1, speed / OUTDOOR_LOPE.maxSpeed)
+    this.legs[0].rotation.x = f.swing * 0.6
+    this.legs[1].rotation.x = -f.swing * 0.6
+    this.arms[0].rotation.x = -f.swing * 0.45
+    this.arms[1].rotation.x = f.swing * 0.45
+    // Lean into the lope, more at speed; the body tucks slightly in the air.
+    this.body.rotation.x = 0.04 + 0.12 * k + (f.airborne ? 0.03 : 0)
+  }
+
+  private trackEva(moved: number) {
+    const eva = this.eva!
+    eva.walked += moved
+    const share = Math.min(1, eva.walked / eva.outLength)
+    if (eva.phase === 'out') eva.onProgress({ step: 1, progress: 0.05 + 0.4 * share, distance: Math.round(eva.outLength) })
+    else eva.onProgress({ step: 3, progress: 0.6 + 0.35 * share, distance: Math.round(eva.outLength) })
+  }
+
+  private arriveEva() {
+    const eva = this.eva!
+    if (eva.phase === 'out') {
+      eva.phase = 'collect'
+      eva.collectTime = 0
+      eva.onProgress({ step: 2, progress: 0.45, distance: Math.round(eva.outLength) })
+      return
+    }
+    eva.onProgress({ step: 4, progress: 1, distance: Math.round(eva.outLength) })
+    this.endEva(true)
+  }
+
+  /** Kneel, scoop, bag: a few seconds at the site. */
+  private updateCollect(dt: number) {
+    const eva = this.eva!
+    eva.collectTime += dt
+    const p = Math.min(1, eva.collectTime / COLLECT_SECONDS)
+    this.gait.step(dt, 0, 0)
+    const pos = this.group.position
+    pos.y = this.heightAt(pos.x, pos.z) - Math.sin(p * Math.PI) * 0.35
+    this.body.rotation.x = Math.sin(p * Math.PI) * 0.6
+    this.arms.forEach((a) => (a.rotation.x = -Math.sin(p * Math.PI) * 1.1))
+    this.legs.forEach((l) => (l.rotation.x = Math.sin(p * Math.PI) * 0.5))
+    eva.onProgress({ step: 2, progress: 0.45 + 0.15 * p, distance: Math.round(eva.outLength) })
+    if (p >= 1) {
+      eva.onCollected(eva.site)
+      eva.phase = 'back'
+      eva.walked = 0
+      this.plan(eva.door)
+      eva.outLength = Math.max(1, this.pathLength())
+      this.body.rotation.x = 0
+    }
   }
 
   private idle(dt: number) {

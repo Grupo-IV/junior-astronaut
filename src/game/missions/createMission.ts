@@ -33,6 +33,7 @@ export function createMissionState(
     crewDoseMsv: 0,
     buildings,
     spareParts: loadout.spare_parts,
+    science: { samples: 0, lastEvaDay: -1 },
     modifiers: [],
     pendingEvent: null,
     decisions: [],

@@ -3,10 +3,11 @@ import { crewNeeds, gameContent, getMission } from '../../game'
 import { useI18n } from '../../i18n/useI18n'
 import { MissionBanner } from '../art/MissionBanner'
 import { RankInsignia } from '../art/RankInsignia'
+import { ScienceNotesButton } from '../science/ScienceNotes'
 import { Icon } from '../ui/Icon'
 import { LanguageToggle } from '../ui/LanguageToggle'
 import { SpaceBackdrop } from '../ui/SpaceBackdrop'
-import { Button, Panel } from '../ui/ui'
+import { SourceLink, Button, Panel } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 
 export function MissionBriefing() {
@@ -60,6 +61,13 @@ export function MissionBriefing() {
                 </li>
               ))}
             </ul>
+            <p className="mx-4 mb-4 rounded-lg bg-white/[0.04] p-3 text-xs text-ink-2">
+              <strong className="text-warn">
+                <Icon name="sun" className="mr-1" />
+                {t('briefing.light')}:{' '}
+              </strong>
+              {t('briefing.lightNote')} <SourceLink sourceKey="lunarIllumination" sources={content.science.sources} />
+            </p>
           </Panel>
           <Panel title={t('briefing.needs')} id="needs" className="md:col-span-2" icon="crew">
             <div className="grid grid-cols-2 gap-3 p-4 text-sm sm:grid-cols-4">
@@ -82,7 +90,8 @@ export function MissionBriefing() {
           <strong className="text-accent-2">{t('briefing.tip')} </strong>
           {mission.briefing.tip}
         </p>
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex flex-wrap justify-end gap-3">
+          <ScienceNotesButton />
           <Button variant="primary" className="px-6 py-3 text-base" onClick={() => dispatch({ type: 'navigate', screen: 'setup' })}>
             {t('briefing.next')} <Icon name="arrowRight" />
           </Button>

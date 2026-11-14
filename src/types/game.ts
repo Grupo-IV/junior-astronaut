@@ -115,6 +115,8 @@ export interface MissionDef {
   firstRandomEventDay: number
   minDaysBetweenEvents: number
   recommendedLoadout: Partial<Loadout>
+  /** Optional science objective: samples to collect on spacewalks (EVA). */
+  scienceGoal?: number
   briefing: {
     tagline: string
     story: string
@@ -278,6 +280,10 @@ export interface DecisionRecord {
   notes: Message[]
   /** True when the crew did not decide in time and the event's fallback ran. */
   timedOut?: boolean
+  /** What the decision changed at once (stores, spare kits, dose). */
+  effect?: Partial<Record<'oxygen' | 'water' | 'food' | 'energy' | 'spares' | 'dose', number>>
+  /** For how many days its effects last (at least 1). */
+  window?: number
 }
 
 export interface DaySnapshot {
@@ -344,6 +350,8 @@ export interface MissionState {
   stats: MissionStats
   failure: { cause: FailureCause; day: number } | null
   nextUid: number
+  /** Science objective: samples collected on spacewalks. */
+  science: { samples: number; lastEvaDay: number }
 }
 
 /** Everything the engine needs that comes from JSON. */
@@ -370,18 +378,41 @@ export interface Lesson {
   alternatives: string[]
 }
 
+/**
+ * How much a value can be trusted, from the most solid to the most game-like:
+ * - physics: follows from a law of nature (e.g. the chemistry of electrolysis);
+ * - measured: measured in space (e.g. by the ISS or a lunar lander);
+ * - engineering: a reference value engineers design with (e.g. NASA's BVAD);
+ * - game: chosen or estimated to make the scenario playable.
+ */
+export type ScienceKind = 'physics' | 'measured' | 'engineering' | 'game'
+
 export interface ScienceParameter {
+  id: string
   name: string
-  value: number
-  unit: string
-  gameValue: number
-  source: string
+  kind: ScienceKind
+  /** The value the game uses (null when it is not a single number). */
+  value: number | null
+  unit?: string
+  /** Typical real-world range, when there is one. */
+  range?: string
+  /** Where it comes from; null for pure game choices. */
+  source: string | null
   note: string
+}
+
+/** A sample the crew can collect on a spacewalk, and what it teaches. */
+export interface ScienceSample {
+  id: string
+  name: string
+  text: string
+  source: string
 }
 
 export interface ScienceData {
   sources: Record<string, ScienceSource>
   parameters: ScienceParameter[]
+  samples: ScienceSample[]
   lessons: Record<FailureCause, Lesson>
   successLesson: Lesson
 }

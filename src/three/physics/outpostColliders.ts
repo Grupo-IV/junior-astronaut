@@ -59,6 +59,16 @@ export function outpostWorld(buildings: PlacedBuilding[]): CollisionWorld {
   return w
 }
 
+/** Where spacewalks collect samples: open ground around the landing zone, one after the other. */
+export const SAMPLE_SITES: Point[] = [
+  { x: -17, z: -7 },
+  { x: 18, z: -6 },
+  { x: -9, z: 19 },
+  { x: 21, z: 3 },
+  { x: -21, z: -1 },
+  { x: 9, z: -19 },
+]
+
 /** Where to stand to go in: at the foot of the habitat porch, or in front of the shelter hatch. */
 export function entrances(buildings: PlacedBuilding[]): { habitat: Point; shelter: Point | null } {
   const shelter = buildings.find((b) => b.defId === 'radiation_shelter')

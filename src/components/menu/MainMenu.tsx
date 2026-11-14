@@ -10,6 +10,7 @@ import { MissionEmblem } from '../art/MissionEmblem'
 import { RankInsignia } from '../art/RankInsignia'
 import { Icon, type IconName } from '../ui/Icon'
 import { LanguageToggle } from '../ui/LanguageToggle'
+import { PaceToggle } from '../ui/PaceToggle'
 import { SoundToggle } from '../ui/SoundToggle'
 import { SpaceBackdrop } from '../ui/SpaceBackdrop'
 import { Button } from '../ui/ui'
@@ -56,6 +57,7 @@ export function MainMenu() {
           </div>
           <div className="hud-frame flex items-center gap-1 rounded-xl p-1">
             <SoundToggle />
+            <PaceToggle />
             <LanguageToggle />
           </div>
         </header>

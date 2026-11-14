@@ -13,6 +13,9 @@ export { newSeed } from './simulation/rng'
 export { resolveDecision, optionAvailability, eventDef, decisionTimeLimit, type ResolveOptions } from './events/events'
 export { scoreMission, type MissionScore } from './rules/scoring'
 export { analyzeMission, type MissionAnalysis } from './rules/analysis'
+export { decisionTimeline, type DecisionStory } from './rules/timeline'
+export { summarizeRun, compareRuns, type RunSummary, type RunComparison } from './rules/summary'
+export { evaStatus, goOnEva, type EvaCheck } from './simulation/eva'
 export {
   BUILDING_IDS,
   CARGO_IDS,

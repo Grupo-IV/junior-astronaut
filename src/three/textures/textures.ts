@@ -14,6 +14,13 @@ function canvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   return [c, c.getContext('2d')!]
 }
 
+/** Heavy textures are generated once and shared (the scene can prepare them in steps first). */
+const memo = new Map<string, unknown>()
+function remember<T>(key: string, make: () => T): T {
+  if (!memo.has(key)) memo.set(key, make())
+  return memo.get(key) as T
+}
+
 function texture(c: HTMLCanvasElement, repeat = 1, color = true): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c)
   t.wrapS = t.wrapT = THREE.RepeatWrapping
@@ -28,6 +35,10 @@ function texture(c: HTMLCanvasElement, repeat = 1, color = true): THREE.CanvasTe
  * matching normal map so the low Sun picks out every bump.
  */
 export function regolithTextures(size = 512, seed = 7): { map: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
+  return remember(`regolith:${size}:${seed}`, () => makeRegolithTextures(size, seed))
+}
+
+function makeRegolithTextures(size = 512, seed = 7): { map: THREE.CanvasTexture; normalMap: THREE.CanvasTexture } {
   const height = new Float32Array(size * size)
   const rand = seededRandom(seed)
   const period = 8
@@ -293,6 +304,10 @@ export function glowTexture(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,255
 
 /** Equirectangular Earth: oceans, continents with deserts and forests, ice caps; and a cloud layer. */
 export function earthTextures(seed = 5): { map: THREE.CanvasTexture; clouds: THREE.CanvasTexture } {
+  return remember(`earth:${seed}`, () => makeEarthTextures(seed))
+}
+
+function makeEarthTextures(seed = 5): { map: THREE.CanvasTexture; clouds: THREE.CanvasTexture } {
   const w = 512
   const h = 256
   const [mc, mctx] = canvas(w)
@@ -354,6 +369,10 @@ export function earthTextures(seed = 5): { map: THREE.CanvasTexture; clouds: THR
  * individual stars are drawn separately (see sky.ts).
  */
 export function milkyWayTexture(seed = 21): THREE.CanvasTexture {
+  return remember(`milkyWay:${seed}`, () => makeMilkyWayTexture(seed))
+}
+
+function makeMilkyWayTexture(seed = 21): THREE.CanvasTexture {
   const w = 1024
   const h = 512
   const [c, ctx] = canvas(w)

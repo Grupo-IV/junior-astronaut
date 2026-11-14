@@ -14,6 +14,7 @@ import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { buildingStatus } from '../hud/SystemsPanel'
 import { STOCK_META } from '../resources/stockMeta'
+import { ScienceObjective } from '../science/ScienceObjective'
 import { Icon } from '../ui/Icon'
 import { GlossaryText } from '../ui/Term'
 import { Button, Meter, StatusTag } from '../ui/ui'
@@ -26,6 +27,8 @@ export type StationAction =
   | { kind: 'toShelter' }
   /** Back to the habitat (taking the crew out of the shelter if they are in it). */
   | { kind: 'toHabitat' }
+  /** Out through the airlock to collect a sample (science goal). */
+  | { kind: 'eva' }
 
 export function StationPanel({
   mission,
@@ -139,6 +142,9 @@ export function StationPanel({
           <p className="text-xs text-ink-3">
             <GlossaryText text={t('res.doseLine', { dose: n(mission.crewDoseMsv, 1), limit: gameContent.environment.doseLimitMsv })} />
           </p>
+          <div className="mt-2 rounded-xl bg-white/[0.03] p-2.5">
+            <ScienceObjective mission={mission} bare busy={busy} onEva={() => onAct({ kind: 'eva' })} />
+          </div>
           {hasShelter ? (
             <div className={`mt-2 rounded-xl p-2.5 ${storm && !shelter.inside ? 'bg-critical/10' : 'bg-white/[0.03]'}`}>
               {storm && !shelter.inside && <p className="mb-1.5 text-xs font-semibold text-critical">{t('panel.shelter.exposed')}</p>}

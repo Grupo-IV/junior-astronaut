@@ -139,6 +139,59 @@ The management view shows what you need to act on, and puts the rest one tap awa
 - the radiation dose comes forward during storms or once it is high;
 - alerts appear in the header only when something needs attention (a storm with a button to take shelter, supplies running out, a power cut, a broken machine, a leak, a shadow coming tomorrow while the batteries are not full), most urgent first.
 
+## The science, and where the game simplifies it
+
+The briefing and the mission report have a **The science in this game** button. It lists every important number with what kind of value it is, its unit, a real range when there is one, and its source:
+
+| Kind | Meaning | Examples |
+| --- | --- | --- |
+| Law of nature | Follows from physics or chemistry | 1.125 kg of water per kg of oxygen (electrolysis) |
+| Measured in space | Measured by a spacecraft or on the ISS | Cosmic-ray dose on the lunar surface, 1.37 mSv/day (Chang'e-4); water recovery 93–94% on the ISS before 2023, 98% demonstrated in 2023 with the Brine Processor Assembly |
+| Engineering reference | A value engineers plan with; real values vary | 0.84 kg of oxygen per astronaut per day (NASA BVAD); battery energy per kg |
+| Game choice or estimate | Chosen or estimated to make the scenario playable | Storm doses inside the habitat, the shelter's 90%, solar array output, greenhouse growing time, the light and shadow calendars |
+
+The values and their notes are in [`src/data/science.json`](src/data/science.json); `python3 tools/science/validate_parameters.py` checks that every parameter says its kind and that every real-world value cites a source.
+
+Simplifications that remain on purpose:
+
+- **Radiation is one number in mSv.** Real protection uses several quantities (effective dose in mSv for long-term risk, organ doses in mGy-Eq for short-term effects). The 250 mSv mission limit is a game rule inspired by NASA's 30-day limit for blood-forming organs (250 mGy-Eq), not a medical threshold; NASA also caps each astronaut's career effective dose at 600 mSv.
+- **Storm doses are scenario estimates.** The NOAA S-scale (S3 strong, S4 severe) counts ≥10 MeV protons near Earth; it does not set the dose inside a habitat, which depends on the storm's energy spectrum and the walls.
+- **Light and shadow are simplified scenarios.** Near the lunar south pole, sunlight depends on the terrain around each spot; real calendars are computed from LOLA terrain maps (NASA PGDA, Mazarico et al. 2011). The missions do not use a real place's calendar.
+- Crew needs are fixed per day, spacewalks do not use extra suit oxygen, and crops are ready after a week instead of about a month.
+
+## Learning from your decisions
+
+- The mission report tells each decision as a short story: what the option promised, what changed right away, what the following days showed (for example the dose received during a storm, or the lowest days of oxygen left), and the other options you could try.
+- **Replay with the same start** relaunches the mission with the same seed and rank. Change your cargo, or one decision, and the report compares the two tries side by side. With the same cargo and the same decisions the mission plays out exactly the same; after a different choice later events can change too, because the dice are rolled in a different order.
+
+## Science goal: spacewalks
+
+Each mission has a science bonus: collect samples on spacewalks (EVA), from the management view or the command station in first person. A spacewalk uses the rules the game already has for going outside: the EVA dose from the environment data (0.5 mSv, a game estimate), and the greenhouse at half care for a day. There are no spacewalks during a solar storm or without habitat power, and at most one a day. The report explains what each sample teaches.
+
+## No time pressure
+
+Urgent decisions in first person have a countdown. **No time pressure** (main menu, or the button next to the countdown) turns it off: the decision waits for you. The management view never uses a countdown. Every sound has a visual twin (alerts, lights, subtitles of the mission log).
+
+## Moving in lunar gravity
+
+Everyone walks with the same physics ([`src/three/physics/locomotion.ts`](src/three/physics/locomotion.ts)), under the Moon's measured gravity of 1.62 m/s²:
+
+- each step is a ballistic hop: leaving the ground at v m/s, a body flies for 2v/g and rises v²/2g (about 15 cm at a lope), which gives the long, floaty Apollo gait;
+- boots grip with friction μ·g, six times weaker than on Earth, so speeding up, braking and turning take room: the crewmate outside starts braking v²/2a before stopping and turns as fast as its grip allows, and nobody can steer in mid-hop;
+- regolith kicked up at each landing flies on clean parabolas and drops straight back (no air, no dust cloud);
+- indoors the same gait is gentler (short, low steps), and the eye height follows each step's hop.
+
+The friction coefficient and take-off speeds are game estimates; the gravity is measured.
+
+## Seeing what the game is doing
+
+Between two scenes a status card shows the steps, the one in progress and how far it has got:
+
+- **Preparing the lunar base**: the 3D engine, then the textures of the ground, the sky and the Earth, the hardware, and the assembly (each step really runs in turn);
+- **Entering the habitat / Back to the management view / Going to the shelter**: the steps of the camera's way in or out;
+- **Simulating day N**: after each day, the engine's results step by step (power made and used, oxygen, water and food balance, radiation dose, events). The next event appears once the day has been shown;
+- **Spacewalk**: suiting up, the walk to the sample site, collecting, the walk back. Progress comes from the crewmate's real walk, and a flag marks each site.
+
 ## Visuals
 
 The game ships no image files. Everything is drawn in code:

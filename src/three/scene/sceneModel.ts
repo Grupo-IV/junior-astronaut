@@ -25,6 +25,8 @@ export interface SceneModel {
   day: number
   batteryFraction: number
   interior: InteriorModel
+  /** Samples collected so far (each one is a spacewalk to watch). */
+  samples: number
 }
 
 /** Status light of a console inside the habitat. */
@@ -96,6 +98,7 @@ export function toSceneModel(content: GameContent, state: MissionState, selected
     day: state.day,
     batteryFraction: state.stocks.energy / Math.max(1, stateBatteryCapacity(content, state)),
     interior: toInteriorModel(content, state),
+    samples: state.science?.samples ?? 0,
   }
 }
 

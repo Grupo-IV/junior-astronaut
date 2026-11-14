@@ -89,3 +89,22 @@ describe('every screen in Portuguese', () => {
     })
   }
 })
+
+describe('the science notes in Portuguese', () => {
+  it('list every value with its kind and no English text', async () => {
+    const { ScienceNotes } = await import('../components/science/ScienceNotes')
+    const previous = getLocale()
+    setLocale('pt')
+    const html = renderToString(createElement(AppProvider, { initialState: initialAppState(), children: createElement(ScienceNotes, { onClose: () => {} }) }))
+    setLocale(previous)
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/&#x27;|&quot;|&amp;/g, ' ')
+    for (const kind of ['Lei da natureza', 'Medido no espaço', 'Referência de engenharia', 'Escolha ou estimativa do jogo']) expect(text).toContain(kind)
+    expect(text).toContain('Oxigénio usado por astronauta')
+    // Cited publications keep their original titles (apostrophes are escaped in the HTML).
+    const prose = Object.values(gameContent.science.sources)
+      .reduce((acc, s) => acc.split(s.title.replace(/'/g, ' ')).join(' '), text)
+      .replace(ALLOWED, ' ')
+    const leftovers = [...prose.matchAll(new RegExp(ENGLISH, 'gi'))].map((m) => prose.slice(Math.max(0, m.index - 60), m.index + 40))
+    expect(leftovers).toEqual([])
+  })
+})

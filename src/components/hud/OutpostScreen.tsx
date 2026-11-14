@@ -22,7 +22,11 @@ import { LanguageToggle } from '../ui/LanguageToggle'
 import { SoundToggle } from '../ui/SoundToggle'
 import { Button, fmt } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
+import { ScienceObjective } from '../science/ScienceObjective'
 import { AlertsBar } from './AlertsBar'
+import { DayProcessing } from './DayProcessing'
+import { LoadingStart, TransitionStatus, useTransitionBusy } from './TransitionStatus'
+import { LOADING_STEPS } from '../../immersive/transitions'
 import { MissionLog } from './MissionLog'
 import { SystemsPanel } from './SystemsPanel'
 
@@ -49,6 +53,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
   // The tutorial points at the management panels, so it always runs in the management view.
   const view = tourOpen ? 'orbit' : state.view
   const immersive = view === 'firstPerson'
+  const dayBusy = useTransitionBusy('day')
   useMissionAudio(mission)
 
   const finished = mission.status === 'success' || mission.status === 'failure'
@@ -75,7 +80,14 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
   return (
     <main className={immersive ? 'fixed inset-0 overflow-hidden bg-space' : 'relative bg-space lg:h-full lg:overflow-hidden'}>
       <div data-tour="viewport" className={immersive ? 'absolute inset-0' : 'h-[45vh] lg:absolute lg:inset-0 lg:h-auto'}>
-        <Suspense fallback={<p className="flex h-full items-center justify-center text-ink-3">{t('outpost.loading')}</p>}>
+        <Suspense
+          fallback={
+            <p className="flex h-full items-center justify-center text-ink-3">
+              <LoadingStart steps={LOADING_STEPS} />
+              {t('outpost.loading')}
+            </p>
+          }
+        >
           <MoonViewport mission={mission} selectedUid={selectedUid} onSelect={onSelect} view={view} onView={setImmersiveView} />
         </Suspense>
       </div>
@@ -84,6 +96,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
         <ImmersiveLayer
           mission={mission}
           view={immersiveView}
+          holdEvents={dayBusy}
           viewToggle={<ViewToggle variant="hud" />}
           onMenu={abort}
           time={{
@@ -151,6 +164,9 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
 
         <div data-tour="resources" className="pointer-events-auto lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
           <ResourcePanel mission={mission} />
+          <div className="mt-3">
+            <ScienceObjective mission={mission} />
+          </div>
         </div>
 
         <div data-tour="systems" className="pointer-events-auto lg:col-start-3 lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
@@ -187,7 +203,10 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
       </div>
       )}
 
-      {!immersive && mission.status === 'awaiting-decision' && mission.pendingEvent && <EventModal mission={mission} />}
+      <DayProcessing mission={mission} duration={playing ? Math.min(1000, SPEEDS[speed].ms * 0.6) : 1000} />
+      <TransitionStatus className={immersive ? 'top-24 right-3' : 'right-3 bottom-3 sm:right-4 sm:bottom-4'} />
+      {/* The next scene (an event) waits until the day's results have been shown. */}
+      {!immersive && !dayBusy && mission.status === 'awaiting-decision' && mission.pendingEvent && <EventModal mission={mission} />}
       {!immersive && consequence && <ConsequencePanel record={consequence} />}
       <OutpostTutorial open={tourOpen} onClose={closeTour} context={{ crew: def.crew, days: def.durationDays }} />
     </main>

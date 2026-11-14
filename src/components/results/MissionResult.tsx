@@ -3,7 +3,7 @@
  * @brief Displays the mission outcome and the educational mission analysis.
  */
 import { useApp } from '../../app/state/AppContext'
-import { analyzeMission, crewNeeds, gameContent, getMission, scoreMission, stateBatteryCapacity, SUPPLY_STOCKS } from '../../game'
+import { analyzeMission, crewNeeds, decisionTimeline, gameContent, getMission, scoreMission, stateBatteryCapacity, summarizeRun, SUPPLY_STOCKS } from '../../game'
 import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { STOCK_META } from '../resources/stockMeta'
@@ -11,12 +11,15 @@ import { RankInsignia } from '../art/RankInsignia'
 import { Icon } from '../ui/Icon'
 import { LanguageToggle } from '../ui/LanguageToggle'
 import { SpaceBackdrop } from '../ui/SpaceBackdrop'
-import { Button, fmt, Panel, Stars, StatusTag } from '../ui/ui'
+import { Button, fmt, Panel, SourceLink, Stars, StatusTag } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
+import { ScienceNotesButton } from '../science/ScienceNotes'
+import { DecisionStoryCard } from './DecisionStory'
 import { LineChart } from './LineChart'
+import { RunComparison } from './RunComparison'
 
 export function MissionResult({ mission }: { mission: MissionState }) {
-  const { dispatch } = useApp()
+  const { state, dispatch } = useApp()
   const { t, m, content } = useI18n()
   const def = getMission(gameContent, mission.missionId)
   const text = getMission(content, mission.missionId)
@@ -35,6 +38,10 @@ export function MissionResult({ mission }: { mission: MissionState }) {
     .map((d) => ({ from: d.day, to: Math.min(d.day + 1, mission.day), label: t('chart.band.storm') }))
     .filter((b) => b.from <= mission.day)
 
+  const stories = decisionTimeline(gameContent, mission)
+  const previous = state.compareWith && state.compareWith.missionId === mission.missionId && state.compareWith.seed === mission.seed ? state.compareWith : null
+  const goal = def.scienceGoal ?? 0
+  const found = content.science.samples.slice(0, Math.min(mission.science?.samples ?? 0, content.science.samples.length))
   const consequence = success
     ? t('result.consequenceSuccess', { crew: def.crew, days: def.durationDays, dose: fmt(mission.crewDoseMsv) })
     : t('result.consequenceFailure', { day: mission.failure!.day, days: def.durationDays })
@@ -79,29 +86,44 @@ export function MissionResult({ mission }: { mission: MissionState }) {
           </dl>
         </Panel>
 
+        {previous && <RunComparison before={previous} now={summarizeRun(gameContent, mission)} />}
+
+        <Panel title={t('result.timeline')} id="decisions">
+          <ul className="space-y-2 p-4 text-sm">
+            {stories.length === 0 && <li className="text-ink-3">{t('result.noDecisions')}</li>}
+            {stories.map((story, i) => (
+              <DecisionStoryCard
+                key={i}
+                story={story}
+                contributed={analysis.contributingDecisions.includes(story.record)}
+                cause={mission.failure ? t(`cause.${mission.failure.cause}`) : undefined}
+              />
+            ))}
+          </ul>
+        </Panel>
+
         <div className="grid gap-4 md:grid-cols-2">
-          <Panel title={success ? t('result.decisionsMade') : t('result.decisionsContributed')} id="decisions">
-            <ul className="space-y-2 p-4 text-sm">
-              {mission.decisions.length === 0 && <li className="text-ink-3">{t('result.noDecisions')}</li>}
-              {mission.decisions.map((d, i) => {
-                const contributed = analysis.contributingDecisions.includes(d)
-                const event = content.events[d.eventId]
-                const option = event.options.find((o) => o.id === d.optionId)
-                return (
-                  <li key={i} className={`rounded-lg border p-2 ${contributed ? 'border-critical/50 bg-critical/10' : 'border-line bg-panel-2'}`}>
-                    <p className="text-xs text-ink-3">{t('result.decisionDay', { day: d.day, event: event.title })}</p>
-                    <p>{option?.label}</p>
-                    {contributed && <StatusTag level="critical" word={t('result.putAtRisk', { cause: t(`cause.${mission.failure!.cause}`) })} />}
-                    {d.notes.map((n, j) => (
-                      <p key={j} className="text-xs text-ink-3">
-                        <Icon name="chevronRight" /> {m(n)}
-                      </p>
-                    ))}
-                  </li>
-                )
-              })}
-            </ul>
-          </Panel>
+          {goal > 0 && (
+            <Panel title={t('result.science')} id="science" icon="science">
+              <div className="p-4 text-sm">
+                <p className="font-semibold">{t('science.samples', { count: mission.science?.samples ?? 0, goal })}</p>
+                {found.length === 0 && <p className="mt-1 text-ink-3">{t('result.noSamples')}</p>}
+                {found.length > 0 && (
+                  <>
+                    <p className="mt-2 text-xs font-bold tracking-wide text-accent uppercase">{t('result.samplesFound')}</p>
+                    <ul className="mt-1 space-y-2 text-ink-2">
+                      {found.map((sample) => (
+                        <li key={sample.id}>
+                          <strong className="text-ink">{sample.name}.</strong> <GlossaryText text={sample.text} />{' '}
+                          <SourceLink sourceKey={sample.source} sources={content.science.sources} />
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </Panel>
+          )}
           <Panel title={t('result.numbers')} id="insights">
             <ul className="space-y-2 p-4 text-sm text-ink-2">
               {analysis.insights.map((insight, i) => (
@@ -161,9 +183,11 @@ export function MissionResult({ mission }: { mission: MissionState }) {
         </section>
 
         <div className="flex flex-wrap justify-center gap-3 pb-8">
-          <Button variant="primary" className="px-6 py-3 text-base" onClick={() => dispatch({ type: 'retry' })}>
-            <Icon name="retry" /> {t('result.retry')}
+          <Button variant="primary" className="px-6 py-3 text-base" onClick={() => dispatch({ type: 'replay' })} title={t('result.replayAbout')}>
+            <Icon name="retry" /> {t('result.replay')}
           </Button>
+          <Button onClick={() => dispatch({ type: 'retry' })}>{t('result.retry')}</Button>
+          <ScienceNotesButton />
           <Button onClick={() => dispatch({ type: 'navigate', screen: 'select' })}>{t('result.another')}</Button>
           <Button variant="ghost" onClick={() => dispatch({ type: 'navigate', screen: 'menu' })}>
             {t('result.menu')}

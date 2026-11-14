@@ -50,6 +50,9 @@ export function analyzeMission(content: GameContent, state: MissionState): Missi
   } else if (loadout.water_recycler === 0) insights.push(msg('analysis.noRecycler'))
   if (stats.producedOxygen > 0) insights.push(msg('analysis.oxygen', { kg: round(stats.producedOxygen) }))
   if (stats.producedFood > 0) insights.push(msg('analysis.food', { kg: round(stats.producedFood, 1) }))
+  if (mission.scienceGoal) {
+    insights.push(msg('analysis.samples', { count: state.science?.samples ?? 0, goal: mission.scienceGoal, dose: round(stats.doseEva, 1) }))
+  }
 
   return { lessonCause: cause, contributingDecisions, insights }
 }

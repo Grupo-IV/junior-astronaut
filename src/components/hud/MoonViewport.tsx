@@ -1,9 +1,14 @@
 /**
  * @file
  * @brief Bridges React mission state to the Three.js outpost scene.
+ *
+ * The scene is prepared in steps (ground, sky, Earth, hardware, assembly) and
+ * each step is reported, so the player sees the base being built instead of a
+ * frozen screen.
  */
 import { useEffect, useRef, useState } from 'react'
 import { gameContent } from '../../game'
+import { cancelTransition, finishTransition, LOADING_STEPS, startTransition, updateTransition } from '../../immersive/transitions'
 import type { ImmersiveView, ViewMode } from '../../immersive/types'
 import { OutpostScene } from '../../three/scene/OutpostScene'
 import { toSceneModel } from '../../three/scene/sceneModel'
@@ -30,34 +35,58 @@ export function MoonViewport({
   const onViewRef = useRef(onView)
   const orbitLabel = useRef<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const [ready, setReady] = useState(false)
   const { t } = useI18n()
+  // The latest props, applied as soon as the scene exists.
+  const latest = useRef({ mission, selectedUid, onSelect, view })
+  latest.current = { mission, selectedUid, onSelect, view }
 
   useEffect(() => {
     onViewRef.current = onView
   }, [onView])
 
   useEffect(() => {
-    if (!containerRef.current) return
-    try {
-      sceneRef.current = new OutpostScene(containerRef.current)
-      onViewRef.current?.(sceneRef.current)
-    } catch {
-      setFailed(true)
-    }
+    const container = containerRef.current
+    if (!container) return
+    let cancelled = false
+    let scene: OutpostScene | null = null
+    const id = startTransition('loading', LOADING_STEPS)
+    updateTransition(id, 0.05, 1)
+    OutpostScene.prepare((step, progress) => {
+      if (!cancelled) updateTransition(id, progress, step)
+    })
+      .then(() => {
+        if (cancelled) return
+        scene = new OutpostScene(container)
+        sceneRef.current = scene
+        const { mission: m, selectedUid: s, onSelect: select } = latest.current
+        scene.onSelect(select)
+        scene.update(toSceneModel(gameContent, m, s))
+        onViewRef.current?.(scene)
+        finishTransition(id)
+        setReady(true)
+      })
+      .catch(() => {
+        cancelTransition(id)
+        setFailed(true)
+      })
     return () => {
+      cancelled = true
+      cancelTransition(id)
       onViewRef.current?.(null)
-      sceneRef.current?.dispose()
+      scene?.dispose()
       sceneRef.current = null
+      setReady(false)
     }
   }, [])
 
   useEffect(() => {
     sceneRef.current?.onSelect(onSelect)
-  }, [onSelect])
+  }, [onSelect, ready])
 
   useEffect(() => {
     sceneRef.current?.update(toSceneModel(gameContent, mission, selectedUid))
-  }, [mission, selectedUid])
+  }, [mission, selectedUid, ready])
 
   useEffect(() => {
     sceneRef.current?.setViewMode(view)
@@ -65,7 +94,7 @@ export function MoonViewport({
     if (!canvas) return
     if (orbitLabel.current === null) orbitLabel.current = canvas.getAttribute('aria-label')
     canvas.setAttribute('aria-label', view === 'firstPerson' ? t('fp.canvasAria') : (orbitLabel.current ?? ''))
-  }, [view, t])
+  }, [view, t, ready])
 
   return (
     <div ref={containerRef} className="h-full w-full">

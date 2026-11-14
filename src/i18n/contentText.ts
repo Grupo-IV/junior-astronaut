@@ -15,6 +15,8 @@
 
 const TEXT_KEYS = new Set([
   'name',
+  'unit',
+  'range',
   'location',
   'label',
   'tagline',
@@ -38,7 +40,7 @@ const TEXT_KEYS = new Set([
 ])
 
 /** Not shown as translatable prose: citation titles stay in their original language. */
-const SKIP = new Set(['environment', 'science.sources', 'science.parameters'])
+const SKIP = new Set(['environment', 'science.sources'])
 
 type Node = unknown
 

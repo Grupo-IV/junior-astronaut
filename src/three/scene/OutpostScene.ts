@@ -15,7 +15,11 @@ import { AstronautHands, gestureTiming } from '../firstPerson/hands'
 import { HabitatInterior } from '../firstPerson/interior'
 import { ShelterInterior } from '../firstPerson/shelterInterior'
 import { NavGrid } from '../physics/collision'
-import { entrances, LANDER_AT, outpostWorld, ROVER_AT, WALK_BOUNDS, type PlacedBuilding } from '../physics/outpostColliders'
+import { entrances, LANDER_AT, outpostWorld, ROVER_AT, SAMPLE_SITES, WALK_BOUNDS, type PlacedBuilding } from '../physics/outpostColliders'
+import { RegolithDust } from '../objects/dust'
+import { cancelTransition, finishTransition, startTransition, updateTransition } from '../../immersive/transitions'
+import { materials } from '../objects/materials'
+import { earthTextures, milkyWayTexture, regolithTextures, starTexture } from '../textures/textures'
 import { attachPicking } from '../interaction/picking'
 import { LightingRig } from '../lighting/lights'
 import { Astronaut } from '../objects/astronaut'
@@ -44,7 +48,26 @@ const LEAN: Record<FocusPoint, number> = {
   door: 0.9,
 }
 
+/** Lets the browser paint (and the progress show) between two heavy steps. */
+const nextFrame = () => new Promise<void>((resolve) => (typeof requestAnimationFrame === 'undefined' ? setTimeout(resolve, 0) : requestAnimationFrame(() => resolve())))
+
 export class OutpostScene implements ImmersiveView {
+  /**
+   * Generates the heavy shared data (textures of the ground, the sky, the
+   * Earth, the hardware) step by step, reporting each step, before the
+   * scene is built. Each texture is made once and then reused.
+   */
+  static async prepare(report: (step: number, progress: number) => void) {
+    const steps: (() => unknown)[] = [() => regolithTextures(), () => (milkyWayTexture(), starTexture()), () => earthTextures(), () => materials()]
+    for (let i = 0; i < steps.length; i++) {
+      report(i + 1, 0.1 + (i / steps.length) * 0.75)
+      await nextFrame()
+      steps[i]()
+    }
+    report(steps.length + 1, 0.9)
+    await nextFrame()
+  }
+
   private renderer: THREE.WebGLRenderer
   private composer: EffectComposer
   private bloom: UnrealBloomPass
@@ -70,6 +93,10 @@ export class OutpostScene implements ImmersiveView {
   private shelterInterior: ShelterInterior | null = null
   private shelterVisual: BuildingVisual | null = null
   private navKey = ''
+  private dust = new RegolithDust(terrainHeight)
+  private samplesSeen = -1
+  private evaTransition = 0
+  private flags = new THREE.Group()
   private placed: PlacedBuilding[] = []
   private hands: AstronautHands
   private rig: FirstPersonRig
@@ -120,7 +147,10 @@ export class OutpostScene implements ImmersiveView {
       this.habitat.group,
       this.astronaut.group,
       this.storm.points,
+      this.dust.points,
+      this.flags,
     )
+    this.astronaut.onLanding = (x, z, vx, vz) => this.dust.kick(x, z, vx, vz)
     this.lighting = new LightingRig(this.scene, sunDisc)
 
     this.selectionRing = new THREE.Mesh(
@@ -220,6 +250,7 @@ export class OutpostScene implements ImmersiveView {
     const sheltering = model.stormActive && model.interior.shelter.operational && doors.shelter
     this.astronaut.setRefuge(sheltering ? doors.shelter : model.stormActive || model.habitatUnpowered ? doors.habitat : null)
     this.shelterVisual?.setShelter(model.interior.shelter)
+    this.watchSamples(model.samples)
     this.shelterInterior?.setState(model.interior.shelter)
     this.storm.setActive(model.stormActive)
     this.habitat.setPowered(!model.habitatUnpowered)
@@ -234,6 +265,44 @@ export class OutpostScene implements ImmersiveView {
     const selected = model.selectedUid ? this.visuals.get(model.selectedUid) : undefined
     this.selectionRing.visible = !!selected
     if (selected) this.selectionRing.position.set(selected.group.position.x, selected.group.position.y + 0.08, selected.group.position.z)
+  }
+
+  /**
+   * A new sample means a spacewalk: a crewmate goes out of the airlock, walks
+   * to the next site, collects, and walks back. The walk itself drives the
+   * progress shown to the player.
+   */
+  private watchSamples(samples: number) {
+    if (this.samplesSeen < 0) {
+      // Mission loaded with samples already collected: plant their flags.
+      for (let i = 0; i < samples; i++) this.plantFlag(SAMPLE_SITES[i % SAMPLE_SITES.length])
+      this.samplesSeen = samples
+      return
+    }
+    if (samples <= this.samplesSeen) {
+      this.samplesSeen = samples
+      return
+    }
+    this.samplesSeen = samples
+    const site = SAMPLE_SITES[(samples - 1) % SAMPLE_SITES.length]
+    const id = startTransition('eva', ['suitUp', 'walkOut', 'collect', 'walkBack', 'done'], { sample: samples })
+    this.evaTransition = id
+    this.astronaut.startEva(entrances(this.placed).habitat, site, {
+      onProgress: (p) => updateTransition(id, p.progress, p.step, p.step === 1 ? { walkOut: { distance: p.distance } } : undefined),
+      onCollected: (at) => this.plantFlag(at),
+      onDone: (completed) => (completed ? finishTransition(id, 1500) : cancelTransition(id)),
+    })
+  }
+
+  /** A small marker flag where a sample was taken. */
+  private plantFlag(at: { x: number; z: number }) {
+    const m = materials()
+    const y = terrainHeight(at.x, at.z)
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), m.metal)
+    pole.position.set(at.x, y + 0.55, at.z)
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.22), new THREE.MeshStandardMaterial({ color: 0xff8a3d, emissive: 0xff8a3d, emissiveIntensity: 0.4, side: THREE.DoubleSide }))
+    flag.position.set(at.x + 0.18, y + 1.0, at.z)
+    this.flags.add(pole, flag)
   }
 
   /** Floor plan and routes for the crewmate outside, rebuilt when the structures change. */
@@ -379,6 +448,7 @@ export class OutpostScene implements ImmersiveView {
     this.sunDirection.copy(this.lighting.sun.position).normalize()
     this.lighting.update(dt)
     this.astronaut.update(dt)
+    this.dust.update(dt)
     this.storm.update(dt, this.sunDirection)
     this.habitat.update(t)
     this.earth.userData.spin?.(dt)
@@ -398,6 +468,7 @@ export class OutpostScene implements ImmersiveView {
   dispose() {
     this.renderer.setAnimationLoop(null)
     this.clearTimers()
+    if (this.evaTransition) cancelTransition(this.evaTransition)
     this.rig.dispose()
     this.timer.dispose()
     this.resizeObserver.disconnect()

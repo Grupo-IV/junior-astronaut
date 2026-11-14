@@ -3,6 +3,7 @@
  * @brief Triggers mission events and resolves player decisions.
  */
 import type {
+  DecisionRecord,
   Message,
   DecisionOption,
   EventDef,
@@ -140,6 +141,14 @@ export function resolveDecision(content: GameContent, state: MissionState, optio
   }
   applyEffects(content, s, option.effects, ctx, `events.${def.id}.options.${option.id}.effects`)
 
+  const before = new Set(state.modifiers.map((m) => m.id))
+  const window = Math.max(1, ...s.modifiers.filter((m) => !before.has(m.id)).map((m) => m.remainingDays))
+  const change = (a: number, b: number) => Math.round((b - a) * 100) / 100
+  const effect: NonNullable<DecisionRecord['effect']> = {}
+  for (const k of ['oxygen', 'water', 'food', 'energy'] as const) if (change(state.stocks[k], s.stocks[k]) !== 0) effect[k] = change(state.stocks[k], s.stocks[k])
+  if (s.spareParts !== state.spareParts) effect.spares = s.spareParts - state.spareParts
+  if (change(state.crewDoseMsv, s.crewDoseMsv) !== 0) effect.dose = change(state.crewDoseMsv, s.crewDoseMsv)
+
   s.decisions.push({
     day: pending.day,
     eventId: def.id,
@@ -147,6 +156,8 @@ export function resolveDecision(content: GameContent, state: MissionState, optio
     risks: option.risks,
     notes: ctx.notes,
     ...(timedOut ? { timedOut: true } : {}),
+    effect,
+    window,
   })
   const label = ref.content(`events.${def.id}.options.${option.id}.label`)
   s.log.push({

@@ -19,6 +19,8 @@ import type { CollisionWorld } from '../physics/collision'
 import type { AstronautHands } from './hands'
 import { EYE_Y, FLOOR_Y, STATIONS, type HabitatInterior } from './interior'
 import { SHELTER_EYE, type ShelterInterior } from './shelterInterior'
+import { finishTransition, startTransition, updateTransition } from '../../immersive/transitions'
+import { INDOOR_WALK, LunarGait } from '../physics/locomotion'
 
 type Phase = 'orbit' | 'entering' | 'inside' | 'leaving'
 type Location = 'habitat' | 'shelter'
@@ -103,6 +105,9 @@ export class FirstPersonRig {
   private reducedMotion = false
   private lastYaw = 0
   private lastPitch = 0
+  /** Status of the camera transition in progress (entering, leaving, through the airlock). */
+  private status = 0
+  private gait = new LunarGait(INDOOR_WALK)
 
   constructor(
     private camera: THREE.PerspectiveCamera,
@@ -193,6 +198,7 @@ export class FirstPersonRig {
     this.transition = { t: 0, switched: false, fromPos: this.camera.position.clone(), fromQuat: this.camera.quaternion.clone(), fromFov: this.camera.fov }
     this.phase = 'entering'
     this.element.style.touchAction = 'none'
+    this.status = startTransition('enter', ['approach', 'airlock', 'inside'])
   }
 
   leave() {
@@ -202,6 +208,7 @@ export class FirstPersonRig {
     this.focusPoint = null
     this.leanTarget.set(0, 0, 0)
     this.input.set(0, 0)
+    this.status = startTransition('leave', ['exit', 'view'])
   }
 
   // ------------------------------------------------------------------ moving
@@ -249,6 +256,7 @@ export class FirstPersonRig {
   private startTravel(to: Location, then: StationId | null) {
     if (this.travel) return
     this.travel = { t: 0, to, then, switched: false }
+    this.status = startTransition('travel', ['airlock', 'hatch', 'arrive'], { to })
     this.autoWalk = null
     this.input.set(0, 0)
   }
@@ -402,6 +410,8 @@ export class FirstPersonRig {
     const fadeOut = 0.35
     const fadeIn = 0.55
     tr.t += dt
+    const total = fly + fadeOut + fadeIn
+    updateTransition(this.status, tr.t / total, tr.t < fly ? 0 : tr.t < fly + fadeOut ? 1 : 2)
     if (tr.t < fly) {
       // Fly to the airlock door, outside.
       const p = easeInOut(tr.t / fly)
@@ -433,6 +443,7 @@ export class FirstPersonRig {
     if (p >= 1) {
       this.setFade(0)
       this.phase = 'inside'
+      finishTransition(this.status)
     }
   }
 
@@ -441,6 +452,7 @@ export class FirstPersonRig {
     const fadeOut = 0.32
     const fadeIn = 0.5
     tr.t += dt
+    updateTransition(this.status, tr.t / (fadeOut + fadeIn), tr.t < fadeOut ? 0 : 1)
     if (tr.t < fadeOut) {
       this.updateInside(dt)
       this.setFade(tr.t / fadeOut)
@@ -470,6 +482,7 @@ export class FirstPersonRig {
       this.setFade(0)
       this.fade.visible = false
       this.phase = 'orbit'
+      finishTransition(this.status)
     }
   }
 
@@ -478,6 +491,7 @@ export class FirstPersonRig {
     tr.t += dt
     const out = this.reducedMotion ? 0.1 : 0.4
     const back = this.reducedMotion ? 0.1 : 0.45
+    updateTransition(this.status, tr.t / (out + back), tr.t < out * 0.5 ? 0 : tr.t < out ? 1 : 2)
     if (tr.t < out) {
       this.setFade(tr.t / out)
       return
@@ -496,6 +510,7 @@ export class FirstPersonRig {
     if (p >= 1) {
       this.setFade(0)
       this.travel = null
+      finishTransition(this.status)
     }
   }
 
@@ -522,8 +537,9 @@ export class FirstPersonRig {
       const iy = this.input.y / Math.max(1, this.input.length())
       desired.set((fx * iy + rx * ix) * WALK * len, (fz * iy + rz * ix) * WALK * len)
     }
-    // Smooth start and stop: no instant jumps.
-    this.velocity.lerp(desired, Math.min(1, dt * (this.autoWalk ? 10 : 7)))
+    // Lunar gait: speeding up, slowing down and turning are limited by the grip of the boots.
+    const step = this.gait.step(dt, desired.x, desired.y)
+    this.velocity.set(step.vx, step.vz)
 
     // 2. Move the body through the collision world (walls, hatches, hardware).
     const speed = this.velocity.length()
@@ -551,7 +567,8 @@ export class FirstPersonRig {
     this.yaw += angleDelta(this.yaw, this.aimYaw) * follow
     this.pitch += (this.aimPitch - this.pitch) * follow
 
-    const bob = walking && !this.reducedMotion ? Math.abs(Math.sin(this.bobPhase)) * 0.04 : 0
+    // Eye height follows the real hop of each step (ballistic, in lunar gravity).
+    const bob = this.reducedMotion ? 0 : step.height
     const breathe = Math.sin((performance.now() / 1000) * 1.4) * 0.004
     const shake = this.shakeAmp > 0.0005 ? new THREE.Vector3((Math.random() - 0.5) * this.shakeAmp, (Math.random() - 0.5) * this.shakeAmp, (Math.random() - 0.5) * this.shakeAmp) : new THREE.Vector3()
     this.shakeAmp *= Math.exp(-dt * 5)

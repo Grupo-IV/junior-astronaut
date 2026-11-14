@@ -16,15 +16,15 @@
       },
       "variants": {
         "moderate": {
-          "label": "Moderate storm (NOAA S3)",
+          "label": "Strong storm (NOAA S3)",
           "onTrigger": [
-            { "type": "modifier", "kind": "storm_dose", "value": 60, "days": 2, "label": "Solar storm: +60 mSv/day inside the habitat" }
+            { "type": "modifier", "kind": "storm_dose", "value": 60, "days": 2, "label": "Strong solar storm: about +60 mSv/day inside the habitat (scenario estimate)" }
           ]
         },
         "severe": {
           "label": "Severe storm (NOAA S4)",
           "onTrigger": [
-            { "type": "modifier", "kind": "storm_dose", "value": 110, "days": 2, "label": "Severe solar storm: +110 mSv/day inside the habitat" }
+            { "type": "modifier", "kind": "storm_dose", "value": 110, "days": 2, "label": "Severe solar storm: about +110 mSv/day inside the habitat (scenario estimate)" }
           ]
         }
       },
@@ -102,7 +102,7 @@
             }
           ],
           "risks": ["radiation"],
-          "lesson": "Radiation dose adds up over a mission. A single strong storm can use up a large share of an astronaut's safe limit."
+          "lesson": "Radiation dose adds up over a mission. A single strong storm can use up a large share of the dose a mission is planned for."
         }
       ]
     },

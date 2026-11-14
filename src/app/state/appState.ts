@@ -12,6 +12,9 @@ import {
   repairBuilding,
   takeShelter,
   leaveShelter,
+  goOnEva,
+  summarizeRun,
+  type RunSummary,
   resolveDecision,
   toLoadout,
   toggleBuilding,
@@ -31,6 +34,10 @@ export interface AppState {
   consequenceIndex: number | null
   /** How the outpost is shown: the management view from outside, or first person inside the habitat. */
   view: ViewMode
+  /** Set when the player replays a try: the next launch uses its seed and rank. */
+  replay: RunSummary | null
+  /** The try a replayed mission is compared with on the result screen. */
+  compareWith: RunSummary | null
 }
 
 export type AppAction =
@@ -47,6 +54,10 @@ export type AppAction =
   | { type: 'repairBuilding'; uid: string }
   | { type: 'takeShelter' }
   | { type: 'leaveShelter' }
+  | { type: 'goOnEva' }
+  /** Replay the finished mission with the same seed and rank (cargo and decisions can change). */
+  | { type: 'replay' }
+  | { type: 'cancelReplay' }
   | { type: 'retry' }
 
 const RANK_KEY = 'junior-astronaut:rank'
@@ -97,6 +108,8 @@ export function initialAppState(): AppState {
     mission: null,
     consequenceIndex: null,
     view: savedView(),
+    replay: null,
+    compareWith: null,
   }
 }
 
@@ -123,19 +136,43 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, rank: action.rank }
     case 'chooseMission': {
       const mission = getMission(gameContent, action.missionId)
-      return { ...state, missionId: mission.id, loadout: toLoadout({}), screen: 'briefing' }
+      return { ...state, missionId: mission.id, loadout: toLoadout({}), screen: 'briefing', replay: null }
     }
     case 'setLoadout':
       return { ...state, loadout: action.loadout }
-    case 'launch':
+    case 'launch': {
+      // A replay starts from the same seed and rank as the try it repeats.
+      const rank = state.replay?.rank ?? state.rank
+      const rules = planRules({ rank })
       return {
         ...state,
-        mission: createMissionState(planRules(state), state.missionId, state.loadout, newSeed(), state.rank),
+        mission: createMissionState(rules, state.missionId, state.loadout, state.replay?.seed ?? newSeed(), rank),
         consequenceIndex: null,
         screen: 'outpost',
+        compareWith: state.replay,
+        replay: null,
       }
+    }
     case 'retry':
-      return { ...state, mission: null, consequenceIndex: null, screen: 'setup' }
+      return { ...state, mission: null, consequenceIndex: null, screen: 'setup', replay: null, compareWith: null }
+    case 'replay': {
+      if (!state.mission) return state
+      const previous = summarizeRun(missionRules(state.mission), state.mission)
+      return {
+        ...state,
+        missionId: previous.missionId,
+        rank: previous.rank,
+        loadout: { ...previous.loadout },
+        mission: null,
+        consequenceIndex: null,
+        screen: 'setup',
+        replay: previous,
+      }
+    }
+    case 'cancelReplay':
+      return { ...state, replay: null }
+    case 'goOnEva':
+      return state.mission ? { ...state, mission: goOnEva(missionRules(state.mission), state.mission) } : state
     case 'advanceDay': {
       if (!state.mission || state.consequenceIndex !== null) return state
       return { ...state, mission: advanceDay(missionRules(state.mission), state.mission) }

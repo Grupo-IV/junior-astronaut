@@ -75,6 +75,15 @@ export function MissionSetup() {
         <p className="mt-1 max-w-3xl text-ink-2">
           <Rich text={t('setup.intro', { mass: fmt(mission.launchMassBudgetKg), mission: getMission(text, mission.id).name })} />
         </p>
+        {state.replay && (
+          <div className="mt-3 flex max-w-3xl flex-wrap items-center gap-3 rounded-xl border border-accent-2/40 bg-accent-2/10 p-3 text-sm" role="status">
+            <Icon name="retry" className="text-accent-2" />
+            <p className="flex-1 text-ink-2">{t('setup.replay')}</p>
+            <Button variant="ghost" onClick={() => dispatch({ type: 'cancelReplay' })}>
+              {t('setup.replayCancel')}
+            </Button>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">

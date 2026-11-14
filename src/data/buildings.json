@@ -37,10 +37,10 @@
       "powerDemandKwhPerDay": 12,
       "shedPriority": 3,
       "waterRecoveryRate": 0.93,
-      "summary": "Recovers 93% of the water the crew uses — from humidity, washing and urine.",
+      "summary": "Recovers about 93% of the water the crew uses — from humidity, washing and urine.",
       "benefit": "Water lasts many times longer.",
       "tradeoff": "Heavy, needs power every day, and can break.",
-      "science": { "text": "The ISS Water Recovery System reclaims around 93% of water; with the Brine Processor it reached 98% in 2023.", "source": "eclssWater" }
+      "science": { "text": "Before 2023 the ISS recovered about 93–94% of its water. In 2023 NASA demonstrated 98% by adding a Brine Processor Assembly. The game uses 93%.", "source": "eclssWater" }
     },
     "greenhouse": {
       "id": "greenhouse",
