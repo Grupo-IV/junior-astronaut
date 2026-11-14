@@ -11,6 +11,8 @@ import type { MissionState } from '../../types/game'
 import { ConsequencePanel } from '../decisions/ConsequencePanel'
 import { EventModal } from '../events/EventModal'
 import { ResourcePanel } from '../resources/ResourcePanel'
+import { OutpostTutorial } from '../tutorial/OutpostTutorial'
+import { hasSeenTutorial } from '../tutorial/tutorialSteps'
 import { SoundToggle } from '../ui/SoundToggle'
 import { Button, fmt } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
@@ -31,6 +33,8 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(0)
+  const [tourOpen, setTourOpen] = useState(() => !hasSeenTutorial())
+  const closeTour = useCallback(() => setTourOpen(false), [])
   const onSelect = useCallback((uid: string | null) => setSelectedUid(uid), [])
   useMissionAudio(mission)
 
@@ -38,10 +42,11 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
   const blocked = mission.status !== 'running' || state.consequenceIndex !== null
 
   useEffect(() => {
-    if (!playing || blocked) return
+    // The tutorial only pauses the UI timer; it never changes the mission itself.
+    if (!playing || blocked || tourOpen) return
     const id = window.setTimeout(() => dispatch({ type: 'advanceDay' }), SPEEDS[speed].ms)
     return () => window.clearTimeout(id)
-  }, [playing, blocked, speed, mission, dispatch])
+  }, [playing, blocked, tourOpen, speed, mission, dispatch])
 
   useEffect(() => {
     if (finished) setPlaying(false)
@@ -54,7 +59,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
 
   return (
     <main className="relative bg-space lg:h-full lg:overflow-hidden">
-      <div className="h-[45vh] lg:absolute lg:inset-0 lg:h-auto">
+      <div data-tour="viewport" className="h-[45vh] lg:absolute lg:inset-0 lg:h-auto">
         <Suspense fallback={<p className="flex h-full items-center justify-center text-ink-3">Loading the Moon…</p>}>
           <MoonViewport mission={mission} selectedUid={selectedUid} onSelect={onSelect} />
         </Suspense>
@@ -62,7 +67,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
 
       <div className="flex flex-col gap-3 p-3 lg:pointer-events-none lg:absolute lg:inset-0 lg:grid lg:grid-cols-[300px_1fr_320px] lg:grid-rows-[auto_1fr_auto]">
         <header className="pointer-events-auto order-first flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel/90 px-4 py-2 backdrop-blur lg:col-span-3">
-          <div className="mr-auto">
+          <div data-tour="mission-clock" className="mr-auto">
             <p className="font-display text-lg leading-tight font-bold">{def.name}</p>
             <p className="text-xs text-ink-3">
               Day <strong className="text-ink">{mission.day}</strong> of {def.durationDays} · ☀ {mission.day === 0 ? 'Landing' : today.label} · Tomorrow: {tomorrow.label} ({Math.round(tomorrow.factor * 100)}% sun)
@@ -77,7 +82,7 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
             </p>
           )}
           {!finished ? (
-            <div className="flex items-center gap-2" role="group" aria-label="Time controls">
+            <div data-tour="time-controls" className="flex items-center gap-2" role="group" aria-label="Time controls">
               <Button variant={playing ? 'secondary' : 'primary'} onClick={() => setPlaying((p) => !p)} disabled={blocked && !playing}>
                 {playing ? '⏸ Pause' : '▶ Play'}
               </Button>
@@ -93,6 +98,9 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
               {mission.status === 'success' ? '🏁 Mission report' : '📋 What went wrong?'}
             </Button>
           )}
+          <Button data-tour="help" variant="ghost" onClick={() => setTourOpen(true)} aria-label="Open the outpost tutorial">
+            <span aria-hidden>❓</span> Tutorial
+          </Button>
           <SoundToggle />
           <Button
             variant="ghost"
@@ -104,11 +112,11 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
           </Button>
         </header>
 
-        <div className="pointer-events-auto lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
+        <div data-tour="resources" className="pointer-events-auto lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
           <ResourcePanel mission={mission} />
         </div>
 
-        <div className="pointer-events-auto lg:col-start-3 lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
+        <div data-tour="systems" className="pointer-events-auto lg:col-start-3 lg:row-start-2 lg:self-start lg:overflow-y-auto lg:max-h-full">
           <SystemsPanel mission={mission} selectedUid={selectedUid} onSelect={onSelect} />
         </div>
 
@@ -135,13 +143,14 @@ export function OutpostScreen({ mission }: { mission: MissionState }) {
           </div>
         )}
 
-        <div className="pointer-events-auto h-56 lg:col-span-3 lg:row-start-3 lg:h-40 lg:max-w-3xl lg:justify-self-center lg:w-full">
+        <div data-tour="mission-log" className="pointer-events-auto h-56 lg:col-span-3 lg:row-start-3 lg:h-40 lg:max-w-3xl lg:justify-self-center lg:w-full">
           <MissionLog mission={mission} />
         </div>
       </div>
 
       {mission.status === 'awaiting-decision' && mission.pendingEvent && <EventModal mission={mission} />}
       {consequence && <ConsequencePanel record={consequence} />}
+      <OutpostTutorial open={tourOpen} onClose={closeTour} context={{ crew: def.crew, days: def.durationDays }} />
     </main>
   )
 }
