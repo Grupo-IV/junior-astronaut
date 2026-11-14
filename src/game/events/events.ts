@@ -4,6 +4,7 @@
  * @brief Triggers mission events and resolves player decisions.
  */
 import type {
+  Message,
   DecisionOption,
   EventDef,
   GameContent,
@@ -14,6 +15,7 @@ import { getMission } from '../content'
 import { hasOperational, isGreenhouseProductive } from '../buildings/buildings'
 import { pick, random } from '../simulation/rng'
 import { applyEffects } from './effects'
+import { msg, ref } from '../messages'
 
 export function eventDef(content: GameContent, id: string): EventDef {
   const def = content.events[id]
@@ -37,28 +39,31 @@ export function eventConditionsMet(content: GameContent, state: MissionState, de
 
 export interface OptionAvailability {
   available: boolean
-  reason?: string
+  reason?: Message
 }
 
 export function optionAvailability(
-  content: GameContent,
+  _content: GameContent,
   state: MissionState,
   option: DecisionOption,
 ): OptionAvailability {
   const req = option.requires
   if (!req) return { available: true }
   if (req.building && !hasOperational(state, req.building)) {
-    const name = content.buildings[req.building].name
     const brought = state.buildings.some((b) => b.defId === req.building)
-    return { available: false, reason: brought ? `Your ${name} is broken.` : `You didn't launch a ${name}.` }
+    return { available: false, reason: msg(brought ? 'sim.req.broken' : 'sim.req.notLaunched', { building: ref.building(req.building) }) }
   }
   if (req.spareParts && state.spareParts < req.spareParts) {
-    return { available: false, reason: 'No spare parts kits left.' }
+    return { available: false, reason: msg('sim.req.noSpares') }
   }
   if (req.minStock && state.stocks[req.minStock.stock] < req.minStock.amount) {
     return {
       available: false,
-      reason: `Needs at least ${req.minStock.amount} kg of ${req.minStock.stock} (you have ${Math.floor(state.stocks[req.minStock.stock])}).`,
+      reason: msg('sim.req.minStock', {
+        amount: req.minStock.amount,
+        stock: ref.stock(req.minStock.stock),
+        have: Math.floor(state.stocks[req.minStock.stock]),
+      }),
     }
   }
   return { available: true }
@@ -69,12 +74,19 @@ function triggerEvent(content: GameContent, state: MissionState, eventId: string
   state.pendingEvent = { eventId, variant, day }
   state.status = 'awaiting-decision'
   state.counters.lastEventDay = day
-  const ctx = { pending: state.pendingEvent, notes: [] as string[] }
-  applyEffects(content, state, def.onTrigger, ctx)
+  const ctx = { pending: state.pendingEvent, notes: [] as Message[] }
+  applyEffects(content, state, def.onTrigger, ctx, `events.${eventId}.onTrigger`)
   const v = variant ? def.variants?.[variant] : undefined
-  if (v) applyEffects(content, state, v.onTrigger, ctx)
-  state.log.push({ day: state.day, kind: 'danger', text: `${def.icon} ${def.title}${v ? ` — ${v.label}` : ''}` })
-  for (const note of ctx.notes) state.log.push({ day: state.day, kind: 'warning', text: note })
+  if (v) applyEffects(content, state, v.onTrigger, ctx, `events.${eventId}.variants.${variant}.onTrigger`)
+  const title = ref.content(`events.${eventId}.title`)
+  state.log.push({
+    day: state.day,
+    kind: 'danger',
+    msg: v
+      ? msg('sim.eventVariant', { icon: def.icon, title, variant: ref.content(`events.${eventId}.variants.${variant}.label`) })
+      : msg('sim.event', { icon: def.icon, title }),
+  })
+  for (const note of ctx.notes) state.log.push({ day: state.day, kind: 'warning', msg: note })
 }
 
 function scheduledNear(mission: MissionDef, day: number, window: number): boolean {
@@ -94,7 +106,7 @@ export function rollEvents(content: GameContent, state: MissionState) {
       state.log.push({
         day: state.day,
         kind: 'science',
-        text: `📡 Space weather alert: a large flare erupted on the Sun. Solar particles are expected on day ${e.day}. Charge your batteries and prepare shielding!`,
+        msg: msg('sim.stormForecast', { day: e.day }),
       })
     }
   }
@@ -128,20 +140,18 @@ export function resolveDecision(content: GameContent, state: MissionState, optio
 
   const s = structuredClone(state)
   const pending = s.pendingEvent!
-  const ctx = { pending, notes: [] as string[] }
-  applyEffects(content, s, option.effects, ctx)
+  const ctx = { pending, notes: [] as Message[] }
+  applyEffects(content, s, option.effects, ctx, `events.${def.id}.options.${option.id}.effects`)
 
   s.decisions.push({
     day: pending.day,
     eventId: def.id,
-    eventTitle: def.title,
     optionId: option.id,
-    optionLabel: option.label,
     risks: option.risks,
     notes: ctx.notes,
   })
-  s.log.push({ day: s.day, kind: 'info', text: `Decision: ${option.icon} ${option.label}.` })
-  for (const note of ctx.notes) s.log.push({ day: s.day, kind: 'warning', text: note })
+  s.log.push({ day: s.day, kind: 'info', msg: msg('sim.decision', { icon: option.icon, option: ref.content(`events.${def.id}.options.${option.id}.label`) }) })
+  for (const note of ctx.notes) s.log.push({ day: s.day, kind: 'warning', msg: note })
   s.pendingEvent = null
   s.status = 'running'
   return s

@@ -16,6 +16,8 @@ import { rollEvents } from '../events/events'
 import { illuminationFor, illuminationPeriod } from '../missions/illumination'
 import { crewNeeds, SUPPLY_STOCKS } from '../resources/loadout'
 import { checkFailure } from '../rules/failure'
+import { msg, ref, round } from '../messages'
+import type { Message } from '../../types/game'
 
 export interface TickOptions {
   events?: boolean
@@ -41,10 +43,12 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
   const defs = content.buildings
   s.day += 1
   const day = s.day
-  const log = (kind: MissionState['log'][number]['kind'], text: string) => s.log.push({ day, kind, text })
+  const log = (kind: MissionState['log'][number]['kind'], m: Message) => s.log.push({ day, kind, msg: m })
 
   const period = illuminationPeriod(mission, day)
-  if (period.fromDay === day && day > 1) log('science', `☀️ ${period.label} — solar input at ${Math.round(period.factor * 100)}%.`)
+  if (period.fromDay === day && day > 1) {
+    log('science', msg('sim.periodStart', { period: ref.content(`missions.${mission.id}.illumination.${mission.illumination.indexOf(period)}.label`), percent: Math.round(period.factor * 100) }))
+  }
 
   const illumination = illuminationFor(mission, day)
   const solarFactor = product(s, 'solar_output')
@@ -79,9 +83,9 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
 
   if (shed.length > 0) {
     s.stats.daysWithShedding += 1
-    log('warning', `⚡ Not enough power — automatically switched off: ${shed.map((b) => defs[b.defId].name).join(', ')}.`)
+    log('warning', msg('sim.shed', { buildings: ref.buildings(shed.map((b) => b.defId)) }))
   }
-  if (habitatUnpowered) log('danger', '⚡ POWER EMERGENCY: batteries empty, habitat life support is failing!')
+  if (habitatUnpowered) log('danger', msg('sim.powerEmergency'))
 
   const needs = crewNeeds(content, mission)
   const flows: DayReport['flows'] = {
@@ -110,7 +114,7 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
       }
       const wasProductive = isGreenhouseProductive(content, b)
       b.growth += 1
-      if (!wasProductive && isGreenhouseProductive(content, b)) log('success', '🌱 The greenhouse is ready — first harvest tomorrow!')
+      if (!wasProductive && isGreenhouseProductive(content, b)) log('success', msg('sim.greenhouseReady'))
     }
   }
 
@@ -141,7 +145,7 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     const lost = s.stocks.water * Math.min(1, waterLoss)
     s.stocks.water -= lost
     flows.water.consumed += lost
-    log('warning', `💦 Leak: lost ${lost.toFixed(1)} kg of water today.`)
+    log('warning', msg('sim.leak', { kg: round(lost, 1) }))
   }
 
   const background = env.gcrDoseMsvPerDay * env.habitatGcrFactor
@@ -157,13 +161,13 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     log(
       blocked > 0 ? 'science' : 'danger',
       blocked > 0
-        ? `☢️ Storm dose today: ${stormReceived.toFixed(1)} mSv. Shielding blocked ${blocked.toFixed(1)} mSv.`
-        : `☢️ Storm dose today: ${stormReceived.toFixed(1)} mSv — the crew had no extra shielding.`,
+        ? msg('sim.stormDoseShielded', { dose: round(stormReceived, 1), blocked: round(blocked, 1) })
+        : msg('sim.stormDoseUnshielded', { dose: round(stormReceived, 1) }),
     )
   }
   const previousDose = s.crewDoseMsv - dose
   if (previousDose < env.doseWarningMsv && s.crewDoseMsv >= env.doseWarningMsv) {
-    log('danger', `☢️ Crew dose passed ${env.doseWarningMsv} mSv — getting close to the ${env.doseLimitMsv} mSv limit!`)
+    log('danger', msg('sim.doseWarning', { warning: env.doseWarningMsv, limit: env.doseLimitMsv }))
   }
 
   s.lastReport = {
@@ -197,20 +201,20 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
   if (failure) {
     s.status = 'failure'
     s.failure = { cause: failure, day }
-    log('danger', `❌ MISSION FAILED: ${content.science.lessons[failure].title}.`)
+    log('danger', msg('sim.missionFailed', { lesson: ref.content(`science.lessons.${failure}.title`) }))
     return s
   }
 
   for (const stock of SUPPLY_STOCKS) {
     const net = flows[stock].consumed - flows[stock].produced
     if (net > 0 && s.stocks[stock] / net < 3 && s.stocks[stock] > 0) {
-      log('warning', `⚠️ Only about ${Math.max(1, Math.floor(s.stocks[stock] / net))} day(s) of ${stock} left at this rate.`)
+      log('warning', msg('sim.lowStock', { count: Math.max(1, Math.floor(s.stocks[stock] / net)), stock: ref.stock(stock) }))
     }
   }
 
   if (day >= mission.durationDays) {
     s.status = 'success'
-    log('success', '🏁 Mission complete! The crew return vehicle is on its way.')
+    log('success', msg('sim.missionComplete'))
     return s
   }
 

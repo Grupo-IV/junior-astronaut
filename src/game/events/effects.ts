@@ -2,14 +2,15 @@
  * @file
  * @brief Applies declarative event effects to mission state.
  */
-import type { BuildingInstance, Effect, GameContent, MissionState, PendingEvent } from '../../types/game'
+import type { BuildingInstance, Effect, GameContent, Message, MissionState, PendingEvent } from '../../types/game'
 import { getMission } from '../content'
 import { pick, random } from '../simulation/rng'
 import { stateBatteryCapacity } from '../buildings/buildings'
+import { contentText, msg, ref } from '../messages'
 
 export interface EffectContext {
   pending: PendingEvent | null
-  notes: string[]
+  notes: Message[]
 }
 
 const LIFE_SUPPORT = new Set(['oxygen_generator', 'water_recycler'])
@@ -23,15 +24,21 @@ function clampStock(content: GameContent, state: MissionState, stock: keyof Miss
   state.stocks[stock] = Math.max(0, Math.min(capacityOf(content, state, stock), value))
 }
 
-function failBuilding(content: GameContent, b: BuildingInstance, ctx: EffectContext) {
+function failBuilding(b: BuildingInstance, ctx: EffectContext) {
   b.status = 'failed'
   b.powered = false
   if (ctx.pending) ctx.pending.targetUid = b.uid
-  ctx.notes.push(`${content.buildings[b.defId].name} is now OFFLINE.`)
+  ctx.notes.push(msg('sim.buildingOffline', { building: ref.building(b.defId) }))
 }
 
-export function applyEffects(content: GameContent, state: MissionState, effects: Effect[], ctx: EffectContext) {
-  for (const effect of effects) {
+/**
+ * Applies effects in order. `path` is where `effects` lives in the game
+ * content (e.g. `events.water_leak.options.patch.effects`), so texts such as
+ * chance notes and modifier labels can be shown in the player's language.
+ */
+export function applyEffects(content: GameContent, state: MissionState, effects: Effect[], ctx: EffectContext, path: string) {
+  effects.forEach((effect, i) => {
+    const at = `${path}.${i}`
     switch (effect.type) {
       case 'addStock':
         clampStock(content, state, effect.stock, state.stocks[effect.stock] + effect.amount)
@@ -50,7 +57,7 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
           value: effect.value,
           remainingDays: effect.days,
           target: effect.target,
-          label: effect.label,
+          label: contentText(`${at}.label`),
           source: ctx.pending?.eventId ?? 'player',
         })
         break
@@ -68,7 +75,7 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
           candidates = state.buildings.filter((b) => b.status === 'ok' && b.defId === effect.target)
         }
         const target = pick(state, candidates)
-        if (target) failBuilding(content, target, ctx)
+        if (target) failBuilding(target, ctx)
         break
       }
       case 'repairBuilding': {
@@ -78,13 +85,13 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
             : state.buildings.find((b) => b.status === 'failed' && b.defId === effect.target)
         if (target && target.status === 'failed') {
           target.status = 'ok'
-          ctx.notes.push(`${content.buildings[target.defId].name} is back ONLINE.`)
+          ctx.notes.push(msg('sim.buildingOnline', { building: ref.building(target.defId) }))
         }
         break
       }
       case 'disableBuilding':
         for (const b of state.buildings) if (b.defId === effect.target) b.enabled = false
-        ctx.notes.push(`${content.buildings[effect.target].name} switched off.`)
+        ctx.notes.push(msg('sim.buildingSwitchedOff', { building: ref.building(effect.target) }))
         break
       case 'resetGrowth':
         for (const b of state.buildings) if (b.defId === 'greenhouse') b.growth = 0
@@ -94,13 +101,13 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
         break
       case 'chance':
         if (random(state) < effect.probability) {
-          ctx.notes.push(effect.note)
-          applyEffects(content, state, effect.effects, ctx)
+          ctx.notes.push(contentText(`${at}.note`))
+          applyEffects(content, state, effect.effects, ctx, `${at}.effects`)
         } else {
-          if (effect.otherwiseNote) ctx.notes.push(effect.otherwiseNote)
-          if (effect.otherwise) applyEffects(content, state, effect.otherwise, ctx)
+          if (effect.otherwiseNote) ctx.notes.push(contentText(`${at}.otherwiseNote`))
+          if (effect.otherwise) applyEffects(content, state, effect.otherwise, ctx, `${at}.otherwise`)
         }
         break
     }
-  }
+  })
 }

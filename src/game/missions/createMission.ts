@@ -2,6 +2,7 @@ import type { BuildingInstance, GameContent, Loadout, MissionState } from '../..
 import { getMission } from '../content'
 import { BUILDING_IDS, initialStocks } from '../resources/loadout'
 import { illuminationPeriod } from './illumination'
+import { msg, ref } from '../messages'
 
 export function createMissionState(
   content: GameContent,
@@ -33,8 +34,18 @@ export function createMissionState(
     pendingEvent: null,
     decisions: [],
     log: [
-      { day: 0, kind: 'info', text: `Touchdown at ${mission.location}. Crew of ${mission.crew}, mission length ${mission.durationDays} days.` },
-      { day: 0, kind: 'science', text: `Day 1 forecast: ${illuminationPeriod(mission, 1).label.toLowerCase()}.` },
+      {
+        day: 0,
+        kind: 'info',
+        msg: msg('sim.touchdown', { location: ref.content(`missions.${mission.id}.location`), crew: mission.crew, days: mission.durationDays }),
+      },
+      {
+        day: 0,
+        kind: 'science',
+        msg: msg('sim.firstForecast', {
+          period: ref.content(`missions.${mission.id}.illumination.${mission.illumination.indexOf(illuminationPeriod(mission, 1))}.label`),
+        }),
+      },
     ],
     history: [
       {

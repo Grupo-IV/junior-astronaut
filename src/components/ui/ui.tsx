@@ -3,6 +3,8 @@
  * @brief Reusable presentation primitives for the mission interface.
  */
 import type { ComponentProps, ReactNode } from 'react'
+import { getLocale } from '../../i18n/locale'
+import { formatNumber, translate } from '../../i18n/translate'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
@@ -42,11 +44,11 @@ export function Panel({ children, className = '', title, id }: { children: React
 
 export type Level = 'good' | 'warn' | 'critical' | 'neutral'
 
-const LEVEL_STYLE: Record<Level, { text: string; icon: string; word: string }> = {
-  good: { text: 'text-good-ink', icon: '✔', word: 'OK' },
-  warn: { text: 'text-warn', icon: '▲', word: 'LOW' },
-  critical: { text: 'text-critical', icon: '✖', word: 'CRITICAL' },
-  neutral: { text: 'text-ink-3', icon: '•', word: '' },
+const LEVEL_STYLE: Record<Level, { text: string; icon: string; word: 'status.ok' | 'status.low' | 'status.critical' | null }> = {
+  good: { text: 'text-good-ink', icon: '✔', word: 'status.ok' },
+  warn: { text: 'text-warn', icon: '▲', word: 'status.low' },
+  critical: { text: 'text-critical', icon: '✖', word: 'status.critical' },
+  neutral: { text: 'text-ink-3', icon: '•', word: null },
 }
 
 /** Status tag: icon + word, never colour alone. */
@@ -55,7 +57,7 @@ export function StatusTag({ level, word }: { level: Level; word?: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold tracking-wide ${s.text}`}>
       <span aria-hidden>{s.icon}</span>
-      {word ?? s.word}
+      {word ?? (s.word ? translate(getLocale(), s.word) : '')}
     </span>
   )
 }
@@ -82,7 +84,7 @@ export function Meter({ value, max, color, marker, label }: { value: number; max
 
 export function Stars({ count, total = 3 }: { count: number; total?: number }) {
   return (
-    <span aria-label={`${count} of ${total} stars`} className="text-3xl tracking-widest">
+    <span aria-label={translate(getLocale(), 'ui.stars', { count, total })} className="text-3xl tracking-widest">
       {Array.from({ length: total }, (_, i) => (
         <span key={i} className={i < count ? 'text-warn' : 'text-line'} aria-hidden>
           ★
@@ -97,11 +99,12 @@ export function SourceLink({ sourceKey, sources }: { sourceKey: string; sources:
   if (!src) return null
   return (
     <a href={src.url} target="_blank" rel="noreferrer" className="text-accent-2 underline decoration-dotted underline-offset-2 hover:text-ink">
-      Source: {src.title}
+      {translate(getLocale(), 'source.label', { title: src.title })}
     </a>
   )
 }
 
+/** Formats a number in the current interface language (decimal comma in Portuguese). */
 export function fmt(n: number, digits = 0): string {
-  return n.toLocaleString('en-US', { maximumFractionDigits: digits, minimumFractionDigits: digits })
+  return formatNumber(getLocale(), n, digits)
 }

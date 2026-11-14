@@ -14,20 +14,24 @@ import {
   SUPPLY_STOCKS,
   toLoadout,
 } from '../../game'
+import { useI18n } from '../../i18n/useI18n'
 import type { LoadoutItemId } from '../../types/game'
+import { LanguageToggle } from '../ui/LanguageToggle'
+import { Rich } from '../ui/Rich'
 import { Button, fmt, Meter, Panel, StatusTag } from '../ui/ui'
-import { GlossaryText, Term } from '../ui/Term'
+import { GlossaryText } from '../ui/Term'
 import { STOCK_META } from '../resources/stockMeta'
 
-const GROUPS: { title: string; items: LoadoutItemId[] }[] = [
-  { title: 'Power', items: ['solar_array', 'battery'] },
-  { title: 'Life support', items: ['water_recycler', 'oxygen_generator', 'greenhouse'] },
-  { title: 'Protection', items: ['radiation_shelter'] },
-  { title: 'Supplies & spares', items: ['oxygen_tank', 'water_crate', 'food_crate', 'spare_parts'] },
-]
+const GROUPS = [
+  { title: 'setup.group.power', items: ['solar_array', 'battery'] },
+  { title: 'setup.group.lifeSupport', items: ['water_recycler', 'oxygen_generator', 'greenhouse'] },
+  { title: 'setup.group.protection', items: ['radiation_shelter'] },
+  { title: 'setup.group.supplies', items: ['oxygen_tank', 'water_crate', 'food_crate', 'spare_parts'] },
+] as const satisfies readonly { title: string; items: readonly LoadoutItemId[] }[]
 
 export function MissionSetup() {
   const { state, dispatch } = useApp()
+  const { t, content: text } = useI18n()
   const content = gameContent
   const mission = getMission(content, state.missionId)
   const { loadout } = state
@@ -39,35 +43,33 @@ export function MissionSetup() {
 
   const remaining = check.budgetKg - check.massKg
   const warnings: string[] = []
-  if (loadout.solar_array === 0) warnings.push('No solar arrays: nothing will recharge the batteries.')
-  if (projection.daysWithShedding > 0) warnings.push(`Power runs short on ${projection.daysWithShedding} day(s) even without any accidents — systems will be switched off.`)
-  if (loadout.radiation_shelter === 0) warnings.push('No radiation shelter: during solar storms you can only improvise with water.')
-  if (loadout.spare_parts === 0) warnings.push('No spare parts: broken equipment can only be fixed by luck.')
+  if (loadout.solar_array === 0) warnings.push(t('setup.warn.noSolar'))
+  if (projection.daysWithShedding > 0) warnings.push(t('setup.warn.shedding', { count: projection.daysWithShedding }))
+  if (loadout.radiation_shelter === 0) warnings.push(t('setup.warn.noShelter'))
+  if (loadout.spare_parts === 0) warnings.push(t('setup.warn.noSpares'))
 
   return (
     <main className="starfield min-h-full px-4 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" onClick={() => dispatch({ type: 'navigate', screen: 'briefing' })}>
-            ← Briefing
+            {t('setup.back')}
           </Button>
-          <div className="flex gap-2">
-            <Button onClick={() => dispatch({ type: 'setLoadout', loadout: toLoadout({}) })}>Clear</Button>
-            <Button onClick={() => dispatch({ type: 'setLoadout', loadout: toLoadout(mission.recommendedLoadout) })}>
-              Use recommended loadout
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => dispatch({ type: 'setLoadout', loadout: toLoadout({}) })}>{t('setup.clear')}</Button>
+            <Button onClick={() => dispatch({ type: 'setLoadout', loadout: toLoadout(mission.recommendedLoadout) })}>{t('setup.recommended')}</Button>
+            <LanguageToggle />
           </div>
         </div>
-        <h1 className="mt-4 font-display text-3xl font-bold">Pack the lander</h1>
+        <h1 className="mt-4 font-display text-3xl font-bold">{t('setup.title')}</h1>
         <p className="mt-1 max-w-3xl text-ink-2">
-          The lander can carry <strong className="text-ink">{fmt(mission.launchMassBudgetKg)} kg</strong> to {mission.name}. Choose
-          machines that <em>make</em> resources, or supplies that <em>store</em> them. Storage space in the habitat is limited too.
+          <Rich text={t('setup.intro', { mass: fmt(mission.launchMassBudgetKg), mission: getMission(text, mission.id).name })} />
         </p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">
             {GROUPS.map((g) => (
-              <Panel key={g.title} title={g.title} id={`group-${g.title}`}>
+              <Panel key={g.title} title={t(g.title)} id={`group-${g.title}`}>
                 <ul className="divide-y divide-line">
                   {g.items.map((id) => (
                     <ItemRow key={id} id={id} count={loadout[id]} onSet={(n) => set(id, n)} remainingKg={remaining} />
@@ -77,23 +79,23 @@ export function MissionSetup() {
             ))}
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start" aria-label="Mission forecast">
-            <Panel title="Lander mass" id="mass">
+          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start" aria-label={t('setup.forecastAria')}>
+            <Panel title={t('setup.mass.title')} id="mass">
               <div className="space-y-2 p-4">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-display text-2xl">{fmt(check.massKg)} kg</span>
-                  <span className="text-sm text-ink-3">of {fmt(check.budgetKg)} kg</span>
+                  <span className="font-display text-2xl">{t('setup.mass.value', { kg: fmt(check.massKg) })}</span>
+                  <span className="text-sm text-ink-3">{t('setup.mass.of', { kg: fmt(check.budgetKg) })}</span>
                 </div>
-                <Meter value={check.massKg} max={check.budgetKg} color={check.overBudget ? 'var(--color-critical)' : 'var(--color-accent)'} label="Lander mass used" />
+                <Meter value={check.massKg} max={check.budgetKg} color={check.overBudget ? 'var(--color-critical)' : 'var(--color-accent)'} label={t('setup.mass.meter')} />
                 {check.overBudget ? (
-                  <StatusTag level="critical" word={`OVER BUDGET by ${fmt(-remaining)} kg`} />
+                  <StatusTag level="critical" word={t('setup.mass.over', { kg: fmt(-remaining) })} />
                 ) : (
-                  <p className="text-xs text-ink-3">{fmt(remaining)} kg still available</p>
+                  <p className="text-xs text-ink-3">{t('setup.mass.left', { kg: fmt(remaining) })}</p>
                 )}
               </div>
             </Panel>
 
-            <Panel title="Habitat storage at launch" id="storage">
+            <Panel title={t('setup.storage.title')} id="storage">
               <div className="space-y-3 p-4">
                 {SUPPLY_STOCKS.map((s) => {
                   const st = check.storage[s]
@@ -102,56 +104,57 @@ export function MissionSetup() {
                     <div key={s}>
                       <div className="flex justify-between text-sm">
                         <span>
-                          <span aria-hidden>{meta.icon}</span> {meta.label}
+                          <span aria-hidden>{meta.icon}</span> {t(`stock.${s}`)}
                         </span>
                         <span className={st.over ? 'text-critical' : 'text-ink-2'}>
-                          {fmt(st.amount)} / {fmt(st.capacity)} kg · {fmt(projection.launchDaysOfSupply[s], 1)} days
+                          {t('setup.storage.line', { amount: fmt(st.amount), capacity: fmt(st.capacity), days: fmt(projection.launchDaysOfSupply[s], 1) })}
                         </span>
                       </div>
-                      <Meter value={st.amount} max={st.capacity} color={meta.color} label={`${meta.label} stored at launch`} />
-                      {st.over && <StatusTag level="critical" word="Won't fit in storage" />}
+                      <Meter value={st.amount} max={st.capacity} color={meta.color} label={t('setup.storage.meter', { stock: t(`stock.${s}`) })} />
+                      {st.over && <StatusTag level="critical" word={t('setup.storage.over')} />}
                     </div>
                   )
                 })}
               </div>
             </Panel>
 
-            <Panel title="Forecast · calm mission" id="forecast">
+            <Panel title={t('setup.forecast.title')} id="forecast">
               <div className="space-y-3 p-4 text-sm">
-                <p className="text-xs text-ink-3">
-                  The simulator runs your {mission.durationDays}-day mission with no storms or accidents. Real missions are never calm!
-                </p>
+                <p className="text-xs text-ink-3">{t('setup.forecast.intro', { days: mission.durationDays })}</p>
                 <div className="flex items-center justify-between rounded-lg bg-panel-2 p-3">
-                  <span>Result</span>
-                  {projection.survivesCalmMission ? (
-                    <StatusTag level="good" word="CREW SURVIVES" />
+                  <span>{t('setup.forecast.result')}</span>
+                  {projection.survivesCalmMission || !projection.failure ? (
+                    <StatusTag level="good" word={t('setup.forecast.survives')} />
                   ) : (
-                    <StatusTag level="critical" word={`FAILS ON DAY ${projection.failure?.day} (${projection.failure?.cause.toUpperCase()})`} />
+                    <StatusTag
+                      level="critical"
+                      word={t('setup.forecast.fails', { day: projection.failure.day, cause: t(`cause.${projection.failure.cause}`).toLocaleUpperCase() })}
+                    />
                   )}
                 </div>
                 <ul className="space-y-1">
                   {SUPPLY_STOCKS.map((s) => (
                     <li key={s} className="flex justify-between">
                       <span>
-                        <span aria-hidden>{STOCK_META[s].icon}</span> {STOCK_META[s].label}
+                        <span aria-hidden>{STOCK_META[s].icon}</span> {t(`stock.${s}`)}
                       </span>
                       {projection.runsOutDay[s] ? (
-                        <StatusTag level="critical" word={`runs out day ${projection.runsOutDay[s]}`} />
+                        <StatusTag level="critical" word={t('setup.forecast.runsOut', { day: projection.runsOutDay[s]! })} />
                       ) : (
-                        <StatusTag level="good" word="lasts" />
+                        <StatusTag level="good" word={t('setup.forecast.lasts')} />
                       )}
                     </li>
                   ))}
-                  <li className="flex justify-between">
-                    <span>⚡ Solar in full sun</span>
+                  <li className="flex justify-between gap-2">
+                    <span>{t('setup.forecast.solar')}</span>
                     <span className={projection.fullSunGenerationKwh >= projection.fullDemandKwh ? 'text-ink-2' : 'text-critical'}>
-                      {fmt(projection.fullSunGenerationKwh)} / {fmt(projection.fullDemandKwh)} <Term id="kwh">kWh</Term> per day
+                      <GlossaryText text={t('setup.forecast.solarValue', { generation: fmt(projection.fullSunGenerationKwh), demand: fmt(projection.fullDemandKwh) })} />
                     </span>
                   </li>
-                  <li className="flex justify-between">
-                    <span>🔋 Lowest battery</span>
+                  <li className="flex justify-between gap-2">
+                    <span>{t('setup.forecast.battery')}</span>
                     <span className={projection.lowestEnergyKwh <= 0.5 ? 'text-critical' : 'text-ink-2'}>
-                      {fmt(projection.lowestEnergyKwh)} / {fmt(projection.batteryCapacityKwh)} <Term id="kwh">kWh</Term>
+                      <GlossaryText text={t('setup.forecast.batteryValue', { lowest: fmt(projection.lowestEnergyKwh), capacity: fmt(projection.batteryCapacityKwh) })} />
                     </span>
                   </li>
                 </ul>
@@ -169,9 +172,9 @@ export function MissionSetup() {
             </Panel>
 
             <Button variant="primary" className="w-full py-3 text-base" disabled={!check.valid} onClick={() => dispatch({ type: 'launch' })}>
-              🚀 Launch mission
+              {t('setup.launch')}
             </Button>
-            {!check.valid && <p className="text-center text-xs text-critical">Fix the mass or storage problems to launch.</p>}
+            {!check.valid && <p className="text-center text-xs text-critical">{t('setup.fix')}</p>}
           </aside>
         </div>
       </div>
@@ -180,18 +183,18 @@ export function MissionSetup() {
 }
 
 function ItemRow({ id, count, onSet, remainingKg }: { id: LoadoutItemId; count: number; onSet: (n: number) => void; remainingKg: number }) {
-  const content = gameContent
+  const { t, content } = useI18n()
   const building = id in content.buildings ? content.buildings[id as keyof typeof content.buildings] : null
   const cargo = !building ? content.cargo[id as keyof typeof content.cargo] : null
   const def = building ?? cargo!
-  const mass = itemMass(content, id)
-  const max = itemMaxCount(content, id)
+  const mass = itemMass(gameContent, id)
+  const max = itemMaxCount(gameContent, id)
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
       <div className="flex-1">
         <p className="font-semibold">
           <span aria-hidden className="mr-1">{def.icon}</span>
-          {def.name} <span className="ml-1 text-xs font-normal text-ink-3">{fmt(mass)} kg each</span>
+          {def.name} <span className="ml-1 text-xs font-normal text-ink-3">{t('item.each', { kg: fmt(mass) })}</span>
         </p>
         <p className="mt-0.5 text-sm text-ink-2">
           <GlossaryText text={def.summary} />
@@ -199,18 +202,23 @@ function ItemRow({ id, count, onSet, remainingKg }: { id: LoadoutItemId; count: 
         {building && (
           <p className="mt-1 text-xs text-ink-3">
             <span className="text-good-ink">+ {building.benefit}</span> <span className="text-serious">− {building.tradeoff}</span>
-            {building.powerDemandKwhPerDay > 0 && <span> · uses {building.powerDemandKwhPerDay} <Term id="kwh">kWh</Term>/day</span>}
+            {building.powerDemandKwhPerDay > 0 && (
+              <span>
+                {' '}
+                <GlossaryText text={t('item.uses', { kwh: building.powerDemandKwhPerDay })} />
+              </span>
+            )}
           </p>
         )}
         <details className="mt-1 text-xs text-ink-3">
-          <summary className="cursor-pointer text-accent-2">Why? The science</summary>
+          <summary className="cursor-pointer text-accent-2">{t('item.why')}</summary>
           <p className="mt-1">
             <GlossaryText text={def.science.text} />
           </p>
         </details>
       </div>
-      <div className="flex items-center gap-2 self-end sm:self-auto" role="group" aria-label={`${def.name} quantity`}>
-        <Button className="size-9 !p-0 text-lg" aria-label={`Remove one ${def.name}`} disabled={count === 0} onClick={() => onSet(count - 1)}>
+      <div className="flex items-center gap-2 self-end sm:self-auto" role="group" aria-label={t('item.quantity', { name: def.name })}>
+        <Button className="size-9 !p-0 text-lg" aria-label={t('item.remove', { name: def.name })} disabled={count === 0} onClick={() => onSet(count - 1)}>
           −
         </Button>
         <output className="w-10 text-center font-display text-xl" aria-live="polite">
@@ -218,9 +226,9 @@ function ItemRow({ id, count, onSet, remainingKg }: { id: LoadoutItemId; count: 
         </output>
         <Button
           className="size-9 !p-0 text-lg"
-          aria-label={`Add one ${def.name}`}
+          aria-label={t('item.add', { name: def.name })}
           disabled={count >= max}
-          title={mass > remainingKg ? 'This will go over the mass budget' : undefined}
+          title={mass > remainingKg ? t('item.overBudget') : undefined}
           onClick={() => onSet(count + 1)}
         >
           +

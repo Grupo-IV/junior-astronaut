@@ -4,78 +4,90 @@
  */
 import { useApp } from '../../app/state/AppContext'
 import { analyzeMission, crewNeeds, gameContent, getMission, scoreMission, stateBatteryCapacity, SUPPLY_STOCKS } from '../../game'
+import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 import { STOCK_META } from '../resources/stockMeta'
+import { LanguageToggle } from '../ui/LanguageToggle'
 import { Button, fmt, Panel, Stars, StatusTag } from '../ui/ui'
 import { GlossaryText } from '../ui/Term'
 import { LineChart } from './LineChart'
 
 export function MissionResult({ mission }: { mission: MissionState }) {
   const { dispatch } = useApp()
+  const { t, m, content } = useI18n()
   const def = getMission(gameContent, mission.missionId)
+  const text = getMission(content, mission.missionId)
   const score = scoreMission(gameContent, mission)
   const analysis = analyzeMission(gameContent, mission)
+  const lesson = analysis.lessonCause ? content.science.lessons[analysis.lessonCause] : content.science.successLesson
   const needs = crewNeeds(gameContent, def)
   const env = gameContent.environment
   const success = mission.status === 'success'
   const days = mission.history.map((h) => h.day)
   const shadowBands = def.illumination
     .filter((p) => p.factor < 0.5 && p.fromDay <= mission.day)
-    .map((p) => ({ from: p.fromDay, to: Math.min(p.toDay, mission.day), label: 'shadow' }))
+    .map((p) => ({ from: p.fromDay, to: Math.min(p.toDay, mission.day), label: t('chart.band.shadow') }))
   const stormBands = mission.decisions
     .filter((d) => d.eventId === 'solar_storm')
-    .map((d) => ({ from: d.day, to: Math.min(d.day + 1, mission.day), label: 'storm' }))
+    .map((d) => ({ from: d.day, to: Math.min(d.day + 1, mission.day), label: t('chart.band.storm') }))
     .filter((b) => b.from <= mission.day)
 
   const consequence = success
-    ? `Your crew of ${def.crew} completed all ${def.durationDays} days with a radiation dose of ${fmt(mission.crewDoseMsv)} mSv.`
-    : `The mission ended on day ${mission.failure!.day} of ${def.durationDays}. Mission control brought the crew home early.`
+    ? t('result.consequenceSuccess', { crew: def.crew, days: def.durationDays, dose: fmt(mission.crewDoseMsv) })
+    : t('result.consequenceFailure', { day: mission.failure!.day, days: def.durationDays })
 
   return (
     <main className="starfield min-h-full px-4 py-8">
       <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex justify-end">
+          <LanguageToggle />
+        </div>
         <header className={`rounded-2xl border p-6 text-center ${success ? 'border-good/40 bg-good/10' : 'border-critical/40 bg-critical/10'}`}>
-          <p className="text-xs font-bold tracking-widest text-ink-3 uppercase">{def.name} · Mission report</p>
-          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{analysis.lesson.title}</h1>
+          <p className="text-xs font-bold tracking-widest text-ink-3 uppercase">{t('result.kicker', { mission: text.name })}</p>
+          <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{lesson.title}</h1>
           <div className="mt-3">
             <Stars count={score.stars} />
           </div>
           <ul className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
-            {score.badges.map((b) => (
-              <li key={b.label} className="rounded-full border border-line bg-panel px-3 py-1" title={b.detail}>
-                <StatusTag level={b.earned ? 'good' : 'neutral'} word={b.label} /> <span className="text-ink-3">
-                  — <GlossaryText text={b.detail} />
-                </span>
-              </li>
-            ))}
+            {score.badges.map((b) => {
+              const detail = m(b.detail)
+              return (
+                <li key={b.id} className="rounded-full border border-line bg-panel px-3 py-1" title={detail}>
+                  <StatusTag level={b.earned ? 'good' : 'neutral'} word={t(`badge.${b.id}`)} />{' '}
+                  <span className="text-ink-3">
+                    — <GlossaryText text={detail} />
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </header>
 
-        <Panel title="Mission analysis" id="analysis">
+        <Panel title={t('result.analysis')} id="analysis">
           <dl className="grid gap-4 p-5 text-sm md:grid-cols-2">
-            <Block term="What happened?" text={analysis.lesson.what} />
-            <Block term="Why?" text={analysis.lesson.why} />
-            <Block term="Consequence" text={consequence} />
-            <Block term="Engineering principle" text={analysis.lesson.principle} accent />
+            <Block term={t('result.what')} text={lesson.what} />
+            <Block term={t('result.why')} text={lesson.why} />
+            <Block term={t('result.consequence')} text={consequence} />
+            <Block term={t('result.principle')} text={lesson.principle} accent />
           </dl>
         </Panel>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Panel title={success ? 'Decisions you made' : 'Decisions that contributed'} id="decisions">
+          <Panel title={success ? t('result.decisionsMade') : t('result.decisionsContributed')} id="decisions">
             <ul className="space-y-2 p-4 text-sm">
-              {mission.decisions.length === 0 && <li className="text-ink-3">No events required a decision.</li>}
+              {mission.decisions.length === 0 && <li className="text-ink-3">{t('result.noDecisions')}</li>}
               {mission.decisions.map((d, i) => {
                 const contributed = analysis.contributingDecisions.includes(d)
+                const event = content.events[d.eventId]
+                const option = event.options.find((o) => o.id === d.optionId)
                 return (
                   <li key={i} className={`rounded-lg border p-2 ${contributed ? 'border-critical/50 bg-critical/10' : 'border-line bg-panel-2'}`}>
-                    <p className="text-xs text-ink-3">
-                      Day {d.day} · {d.eventTitle}
-                    </p>
-                    <p>{d.optionLabel}</p>
-                    {contributed && <StatusTag level="critical" word={`Put ${mission.failure!.cause} at risk`} />}
-                    {d.notes.map((n) => (
-                      <p key={n} className="text-xs text-ink-3">
-                        → {n}
+                    <p className="text-xs text-ink-3">{t('result.decisionDay', { day: d.day, event: event.title })}</p>
+                    <p>{option?.label}</p>
+                    {contributed && <StatusTag level="critical" word={t('result.putAtRisk', { cause: t(`cause.${mission.failure!.cause}`) })} />}
+                    {d.notes.map((n, j) => (
+                      <p key={j} className="text-xs text-ink-3">
+                        → {m(n)}
                       </p>
                     ))}
                   </li>
@@ -83,21 +95,21 @@ export function MissionResult({ mission }: { mission: MissionState }) {
               })}
             </ul>
           </Panel>
-          <Panel title="What the numbers say" id="insights">
+          <Panel title={t('result.numbers')} id="insights">
             <ul className="space-y-2 p-4 text-sm text-ink-2">
-              {analysis.insights.map((t) => (
-                <li key={t} className="flex gap-2">
+              {analysis.insights.map((insight, i) => (
+                <li key={i} className="flex gap-2">
                   <span aria-hidden className="text-accent-2">▸</span>
                   <span>
-                    <GlossaryText text={t} />
+                    <GlossaryText text={m(insight)} />
                   </span>
                 </li>
               ))}
             </ul>
             <div className="border-t border-line p-4">
-              <p className="font-display text-sm font-bold text-accent">{success ? 'Try next' : 'What could you try instead?'}</p>
+              <p className="font-display text-sm font-bold text-accent">{success ? t('result.tryNext') : t('result.tryInstead')}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-2">
-                {analysis.lesson.alternatives.map((a) => (
+                {lesson.alternatives.map((a) => (
                   <li key={a}>
                     <GlossaryText text={a} />
                   </li>
@@ -107,47 +119,47 @@ export function MissionResult({ mission }: { mission: MissionState }) {
           </Panel>
         </div>
 
-        <section aria-label="Mission timeline charts" className="grid gap-4 md:grid-cols-2">
+        <section aria-label={t('result.charts')} className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <LineChart
-              title="Days of supply left (stored amount ÷ daily crew need)"
-              unit="days"
+              title={t('chart.supply')}
+              unit={t('chart.unit.days')}
               days={days}
               bands={shadowBands}
               series={SUPPLY_STOCKS.map((s) => ({
                 key: s,
-                label: STOCK_META[s].label,
+                label: t(`stock.${s}`),
                 color: STOCK_META[s].color,
                 values: mission.history.map((h) => h[s] / needs[s]),
               }))}
             />
           </div>
           <LineChart
-            title="Crew radiation dose"
+            title={t('chart.dose')}
             unit="mSv"
             days={days}
             bands={stormBands}
             yMax={env.doseLimitMsv * 1.1}
-            threshold={{ value: env.doseLimitMsv, label: 'limit' }}
-            series={[{ key: 'dose', label: 'Dose', color: 'var(--color-serious)', values: mission.history.map((h) => h.dose) }]}
+            threshold={{ value: env.doseLimitMsv, label: t('chart.limit') }}
+            series={[{ key: 'dose', label: t('chart.series.dose'), color: 'var(--color-serious)', values: mission.history.map((h) => h.dose) }]}
           />
           <LineChart
-            title="Battery charge"
+            title={t('chart.battery')}
             unit="kWh"
             days={days}
             bands={shadowBands}
             yMax={stateBatteryCapacity(gameContent, mission)}
-            series={[{ key: 'energy', label: 'Battery', color: 'var(--color-warn)', values: mission.history.map((h) => h.energy) }]}
+            series={[{ key: 'energy', label: t('chart.series.battery'), color: 'var(--color-warn)', values: mission.history.map((h) => h.energy) }]}
           />
         </section>
 
         <div className="flex flex-wrap justify-center gap-3 pb-8">
           <Button variant="primary" className="px-6 py-3 text-base" onClick={() => dispatch({ type: 'retry' })}>
-            🔁 Try again (edit cargo)
+            {t('result.retry')}
           </Button>
-          <Button onClick={() => dispatch({ type: 'navigate', screen: 'select' })}>Choose another mission</Button>
+          <Button onClick={() => dispatch({ type: 'navigate', screen: 'select' })}>{t('result.another')}</Button>
           <Button variant="ghost" onClick={() => dispatch({ type: 'navigate', screen: 'menu' })}>
-            Main menu
+            {t('result.menu')}
           </Button>
         </div>
       </div>
