@@ -3,7 +3,8 @@
  * @brief Inline glossary term: a keyboard-accessible button that toggles a short explanation.
  */
 import { Fragment, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { GLOSSARY, splitGlossary, type GlossaryId } from './glossary'
+import { useI18n } from '../../i18n/useI18n'
+import { splitGlossary, type GlossaryId } from './glossary'
 
 /** Popover API (Chrome 114, Firefox 125, Safari 17) is newer than the build target, so older browsers get a fallback. */
 const SUPPORTS_POPOVER = typeof HTMLElement !== 'undefined' && Object.prototype.hasOwnProperty.call(HTMLElement.prototype, 'popover')
@@ -12,7 +13,8 @@ const GAP = 6
 const MARGIN = 16
 
 export function Term({ id, children }: { id: GlossaryId; children: ReactNode }) {
-  const entry = GLOSSARY[id]
+  const { content, t } = useI18n()
+  const entry = content.glossary[id]
   const panelId = useId()
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLSpanElement>(null)
@@ -99,7 +101,7 @@ export function Term({ id, children }: { id: GlossaryId; children: ReactNode }) 
         <sup aria-hidden className="ml-px text-[0.65em] text-accent-2">
           ⓘ
         </sup>
-        <span className="sr-only"> (what does this mean?)</span>
+        <span className="sr-only"> {t('term.what')}</span>
       </button>
       <span
         ref={panelRef}
@@ -117,9 +119,10 @@ export function Term({ id, children }: { id: GlossaryId; children: ReactNode }) 
 
 /** Renders text with the first occurrence of each glossary term made explainable. */
 export function GlossaryText({ text }: { text: string }) {
+  const { locale } = useI18n()
   return (
     <>
-      {splitGlossary(text).map((part, i) => (
+      {splitGlossary(text, locale).map((part, i) => (
         <Fragment key={i}>{typeof part === 'string' ? part : <Term id={part.id}>{part.text}</Term>}</Fragment>
       ))}
     </>

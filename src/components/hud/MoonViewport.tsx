@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { gameContent } from '../../game'
 import { OutpostScene } from '../../three/scene/OutpostScene'
 import { toSceneModel } from '../../three/scene/sceneModel'
+import { useI18n } from '../../i18n/useI18n'
 import type { MissionState } from '../../types/game'
 
 export function MoonViewport({
@@ -19,14 +20,15 @@ export function MoonViewport({
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<OutpostScene | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const { t } = useI18n()
 
   useEffect(() => {
     if (!containerRef.current) return
     try {
       sceneRef.current = new OutpostScene(containerRef.current)
     } catch {
-      setError('3D view unavailable: your browser could not start WebGL. The mission still works with the panels.')
+      setFailed(true)
     }
     return () => {
       sceneRef.current?.dispose()
@@ -44,7 +46,7 @@ export function MoonViewport({
 
   return (
     <div ref={containerRef} className="h-full w-full">
-      {error && <p className="flex h-full items-center justify-center p-6 text-center text-ink-3">{error}</p>}
+      {failed && <p className="flex h-full items-center justify-center p-6 text-center text-ink-3">{t('outpost.viewportError')}</p>}
     </div>
   )
 }

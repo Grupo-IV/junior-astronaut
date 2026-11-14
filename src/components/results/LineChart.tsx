@@ -3,6 +3,7 @@
  * @brief Accessible SVG line chart with a tabular representation.
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useI18n } from '../../i18n/useI18n'
 
 export interface Series {
   key: string
@@ -62,6 +63,7 @@ function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] 
 
 export function LineChart({ title, unit, days, series, threshold, bands = [], yMax, height = 200 }: Props) {
   const id = useId()
+  const { t: tr, n: num } = useI18n()
   const [hover, setHover] = useState<number | null>(null)
   const [boxRef, W] = useWidth<HTMLDivElement>()
   const H = height
@@ -92,7 +94,7 @@ export function LineChart({ title, unit, days, series, threshold, bands = [], yM
           {title}
         </span>
         {series.length > 1 && (
-          <ul className="flex flex-wrap gap-3 text-xs text-ink-2" aria-label="Legend">
+          <ul className="flex flex-wrap gap-3 text-xs text-ink-2" aria-label={tr('chart.legend')}>
             {series.map((s) => (
               <li key={s.key} className="flex items-center gap-1.5">
                 <span className="inline-block h-0.5 w-4 rounded" style={{ background: s.color }} aria-hidden />
@@ -136,7 +138,7 @@ export function LineChart({ title, unit, days, series, threshold, bands = [], yM
             <g key={t}>
               <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="currentColor" className="text-line" strokeWidth={t === 0 ? 1 : 0.5} />
               <text x={PAD.left - 6} y={y(t) + 3} textAnchor="end" fontSize={10} className="fill-ink-3">
-                {Number.isInteger(t) ? t : t.toFixed(1)}
+                {num(t, Number.isInteger(t) ? 0 : 1)}
               </text>
             </g>
           ))}
@@ -186,23 +188,23 @@ export function LineChart({ title, unit, days, series, threshold, bands = [], yM
             className="pointer-events-none absolute top-1 rounded-lg border border-line bg-panel-2 px-2 py-1 text-xs shadow-lg"
             style={{ left: `${(x(hover) / W) * 100}%`, transform: x(hover) > W / 2 ? 'translateX(calc(-100% - 8px))' : 'translateX(8px)' }}
           >
-            <p className="font-semibold">Day {days[hover]}</p>
+            <p className="font-semibold">{tr('chart.day', { day: days[hover] })}</p>
             {series.map((s) => (
               <p key={s.key} className="flex items-center gap-1.5 text-ink-2">
                 <span className="inline-block size-2 rounded-full" style={{ background: s.color }} aria-hidden />
-                {s.label}: <span className="text-ink">{s.values[hover].toFixed(1)}</span> {unit}
+                {s.label}: <span className="text-ink">{num(s.values[hover], 1)}</span> {unit}
               </p>
             ))}
           </div>
         )}
       </div>
       <details className="mt-1 text-xs text-ink-3">
-        <summary className="cursor-pointer">Show data table</summary>
+        <summary className="cursor-pointer">{tr('chart.table')}</summary>
         <div className="mt-2 max-h-48 overflow-auto">
           <table className="w-full text-left">
             <thead>
               <tr>
-                <th className="pr-3">Day</th>
+                <th className="pr-3">{tr('chart.dayHeader')}</th>
                 {series.map((s) => (
                   <th key={s.key} className="pr-3">
                     {s.label} ({unit})
@@ -216,7 +218,7 @@ export function LineChart({ title, unit, days, series, threshold, bands = [], yM
                   <td className="pr-3">{d}</td>
                   {series.map((s) => (
                     <td key={s.key} className="pr-3 text-ink-2">
-                      {s.values[i].toFixed(1)}
+                      {num(s.values[i], 1)}
                     </td>
                   ))}
                 </tr>

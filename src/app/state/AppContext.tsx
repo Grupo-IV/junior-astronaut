@@ -3,8 +3,9 @@ import { appReducer, initialAppState, type AppAction, type AppState } from './ap
 
 const AppContext = createContext<{ state: AppState; dispatch: Dispatch<AppAction> } | null>(null)
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, undefined, initialAppState)
+/** `initialState` is for tests and previews; the app starts from the main menu. */
+export function AppProvider({ children, initialState }: { children: ReactNode; initialState?: AppState }) {
+  const [state, dispatch] = useReducer(appReducer, initialState, (s) => s ?? initialAppState())
   return <AppContext.Provider value={{ state, dispatch }}>{children}</AppContext.Provider>
 }
 
