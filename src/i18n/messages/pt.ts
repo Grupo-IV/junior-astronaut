@@ -221,6 +221,7 @@ export const pt: Record<MessageKey, string> = {
   'res.doseMeter': 'Dose de radiação da tripulação',
   'res.doseLine': '{dose} / {limit} mSv (limite do jogo)',
   'res.doseToday': '+{dose} hoje',
+  'res.doseWhy': 'Os raios cósmicos dão cerca de 1,4 mSv por dia à superfície da Lua. Uma tempestade solar pode juntar dezenas por dia. O limite desta missão é 250 mSv, uma simplificação do jogo baseada nos valores de radiação de curto prazo da NASA; a marca branca é o objetivo de 100 mSv de “radiação segura”.',
   'res.doseWhy': 'Os raios cósmicos dão cerca de 1,4 mSv por dia à superfície da Lua (medido pela Chang\'e-4). Neste jogo, uma tempestade solar forte junta umas dezenas de mSv por dia (estimativa). O limite de 250 mSv é uma regra do jogo inspirada nos limites de curto prazo da NASA, não um limiar médico. A marca branca é o objetivo de dose baixa do jogo, 100 mSv.',
 
   // Painel de sistemas

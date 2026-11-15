@@ -222,6 +222,7 @@ export const en = {
   'res.doseMeter': 'Crew radiation dose',
   'res.doseLine': '{dose} / {limit} mSv (game limit)',
   'res.doseToday': '+{dose} today',
+  'res.doseWhy': "Cosmic rays give about 1.4 mSv per day on the Moon's surface. A solar storm can add dozens per day. This mission's limit is 250 mSv, a game simplification based on NASA's short-term radiation values; the white mark is the 100 mSv 'radiation safe' goal.",
   'res.doseWhy': "Cosmic rays give about 1.4 mSv per day on the Moon's surface (measured by Chang'e-4). In this game a strong solar storm adds an estimated tens of mSv per day. The 250 mSv limit is a game rule inspired by NASA's short-term limits, not a medical threshold. The white mark is the game's 100 mSv low-dose goal.",
 
   // Systems panel
