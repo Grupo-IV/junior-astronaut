@@ -7,10 +7,13 @@ import { getMission } from '../content'
 import { pick, random } from '../simulation/rng'
 import { stateBatteryCapacity } from '../buildings/buildings'
 import { contentText, msg, ref } from '../messages'
+import { meetsRequirement } from './requirements'
 
 export interface EffectContext {
   pending: PendingEvent | null
   notes: Message[]
+  /** Set by a `followUp` effect: the event to decide next. */
+  followUp?: string
 }
 
 const LIFE_SUPPORT = new Set(['oxygen_generator', 'water_recycler'])
@@ -59,6 +62,7 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
           target: effect.target,
           label: contentText(`${at}.label`),
           source: ctx.pending?.eventId ?? 'player',
+          ...(effect.tag ? { tag: effect.tag } : {}),
         })
         break
       case 'failBuilding': {
@@ -107,6 +111,13 @@ export function applyEffects(content: GameContent, state: MissionState, effects:
           if (effect.otherwiseNote) ctx.notes.push(contentText(`${at}.otherwiseNote`))
           if (effect.otherwise) applyEffects(content, state, effect.otherwise, ctx, `${at}.otherwise`)
         }
+        break
+      case 'branch':
+        if (meetsRequirement(state, effect.if)) applyEffects(content, state, effect.then, ctx, `${at}.then`)
+        else if (effect.else) applyEffects(content, state, effect.else, ctx, `${at}.else`)
+        break
+      case 'followUp':
+        ctx.followUp = effect.eventId
         break
     }
   })

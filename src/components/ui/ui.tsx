@@ -5,13 +5,14 @@
 import type { ComponentProps, ReactNode } from 'react'
 import { getLocale } from '../../i18n/locale'
 import { formatNumber, translate } from '../../i18n/translate'
+import { Icon, type IconName } from './Icon'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-space hover:brightness-110 font-semibold',
-  secondary: 'bg-panel-2 text-ink border border-line hover:border-ink-3',
-  ghost: 'text-ink-2 hover:text-ink hover:bg-panel-2',
+  primary: 'bg-gradient-to-b from-[#ffa45e] to-accent text-space hover:brightness-110 font-semibold btn-glow',
+  secondary: 'bg-panel-2/80 text-ink border border-hud-dim hover:border-hud/70 hover:bg-panel-2',
+  ghost: 'text-ink-2 hover:text-ink hover:bg-white/5',
   danger: 'bg-critical/15 text-critical border border-critical/40 hover:bg-critical/25',
 }
 
@@ -29,11 +30,13 @@ export function Button({
   )
 }
 
-export function Panel({ children, className = '', title, id }: { children: ReactNode; className?: string; title?: ReactNode; id?: string }) {
+/** Mission-control panel: dark glass with cyan corner brackets and an optional icon in the title bar. */
+export function Panel({ children, className = '', title, id, icon }: { children: ReactNode; className?: string; title?: ReactNode; id?: string; icon?: IconName }) {
   return (
-    <section aria-labelledby={title && id ? id : undefined} className={`rounded-xl border border-line bg-panel/90 backdrop-blur ${className}`}>
+    <section aria-labelledby={title && id ? id : undefined} className={`hud-frame rounded-xl backdrop-blur-md ${className}`}>
       {title && (
-        <h2 id={id} className="border-b border-line px-4 py-2 font-display text-xs font-bold tracking-widest text-ink-3 uppercase">
+        <h2 id={id} className="hud-title flex items-center gap-2 rounded-t-xl border-b border-hud-dim px-4 py-2 font-display text-xs font-bold tracking-[0.18em] text-hud uppercase">
+          {icon && <Icon name={icon} size="1.25em" />}
           {title}
         </h2>
       )}
@@ -44,11 +47,11 @@ export function Panel({ children, className = '', title, id }: { children: React
 
 export type Level = 'good' | 'warn' | 'critical' | 'neutral'
 
-const LEVEL_STYLE: Record<Level, { text: string; icon: string; word: 'status.ok' | 'status.low' | 'status.critical' | null }> = {
-  good: { text: 'text-good-ink', icon: '✔', word: 'status.ok' },
-  warn: { text: 'text-warn', icon: '▲', word: 'status.low' },
-  critical: { text: 'text-critical', icon: '✖', word: 'status.critical' },
-  neutral: { text: 'text-ink-3', icon: '•', word: null },
+const LEVEL_STYLE: Record<Level, { text: string; icon: IconName; word: 'status.ok' | 'status.low' | 'status.critical' | null }> = {
+  good: { text: 'text-good-ink', icon: 'check', word: 'status.ok' },
+  warn: { text: 'text-warn', icon: 'warning', word: 'status.low' },
+  critical: { text: 'text-critical', icon: 'close', word: 'status.critical' },
+  neutral: { text: 'text-ink-3', icon: 'dot', word: null },
 }
 
 /** Status tag: icon + word, never colour alone. */
@@ -56,7 +59,7 @@ export function StatusTag({ level, word }: { level: Level; word?: string }) {
   const s = LEVEL_STYLE[level]
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold tracking-wide ${s.text}`}>
-      <span aria-hidden>{s.icon}</span>
+      <Icon name={s.icon} size="1.1em" />
       {word ?? (s.word ? translate(getLocale(), s.word) : '')}
     </span>
   )
@@ -84,11 +87,9 @@ export function Meter({ value, max, color, marker, label }: { value: number; max
 
 export function Stars({ count, total = 3 }: { count: number; total?: number }) {
   return (
-    <span aria-label={translate(getLocale(), 'ui.stars', { count, total })} className="text-3xl tracking-widest">
+    <span aria-label={translate(getLocale(), 'ui.stars', { count, total })} className="inline-flex gap-2 text-4xl" role="img">
       {Array.from({ length: total }, (_, i) => (
-        <span key={i} className={i < count ? 'text-warn' : 'text-line'} aria-hidden>
-          ★
-        </span>
+        <Icon key={i} name="star" className={i < count ? 'text-warn drop-shadow-[0_0_10px_rgba(250,178,25,0.6)]' : 'text-line'} />
       ))}
     </span>
   )

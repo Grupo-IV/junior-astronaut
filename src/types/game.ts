@@ -65,6 +65,8 @@ export interface BuildingDef {
   oxygenBonusKgPerDay?: number
   waterUseKgPerDay?: number
   stormDoseFactor?: number
+  /** Extra life-support power while the crew is inside (shelter). */
+  occupiedPowerKwhPerDay?: number
   summary: string
   benefit: string
   tradeoff: string
@@ -113,6 +115,8 @@ export interface MissionDef {
   firstRandomEventDay: number
   minDaysBetweenEvents: number
   recommendedLoadout: Partial<Loadout>
+  /** Optional science objective: samples to collect on spacewalks (EVA). */
+  scienceGoal?: number
   briefing: {
     tagline: string
     story: string
@@ -146,26 +150,37 @@ export type ModifierKind =
   | 'building_offline' // target building does not run
   | 'extra_power' // extra kWh/day demand
   | 'water_loss' // fraction of stored water lost per day
+  | 'oxygen_loss' // fraction of stored oxygen lost per day (cabin air leak)
 
 export type BuildingTarget = BuildingId | 'random-active' | 'random-life-support' | 'event-target'
-
-export type Effect =
-  | { type: 'addStock'; stock: StockId; amount: number }
-  | { type: 'scaleStock'; stock: StockId; factor: number }
-  | { type: 'addDose'; msv: number }
-  | { type: 'modifier'; kind: ModifierKind; value: number; days: number; target?: BuildingId; label: string }
-  | { type: 'failBuilding'; target: BuildingTarget }
-  | { type: 'repairBuilding'; target: BuildingTarget }
-  | { type: 'disableBuilding'; target: BuildingId }
-  | { type: 'resetGrowth' }
-  | { type: 'useSpare'; amount: number }
-  | { type: 'chance'; probability: number; effects: Effect[]; otherwise?: Effect[]; note: string; otherwiseNote?: string }
 
 export interface OptionRequirement {
   building?: BuildingId
   spareParts?: number
   minStock?: { stock: StockId; amount: number }
 }
+
+/**
+ * Habitat states that a modifier stands for, so the 3D interior can show
+ * them (a sealed hatch, an ongoing leak). Tags never change the numbers.
+ */
+export type ModifierTag = 'bay_sealed' | 'crew_sheltered'
+
+export type Effect =
+  | { type: 'addStock'; stock: StockId; amount: number }
+  | { type: 'scaleStock'; stock: StockId; factor: number }
+  | { type: 'addDose'; msv: number }
+  | { type: 'modifier'; kind: ModifierKind; value: number; days: number; target?: BuildingId; label: string; tag?: ModifierTag }
+  | { type: 'failBuilding'; target: BuildingTarget }
+  | { type: 'repairBuilding'; target: BuildingTarget }
+  | { type: 'disableBuilding'; target: BuildingId }
+  | { type: 'resetGrowth' }
+  | { type: 'useSpare'; amount: number }
+  | { type: 'chance'; probability: number; effects: Effect[]; otherwise?: Effect[]; note: string; otherwiseNote?: string }
+  /** Runs `then` when the base meets `if` right now (spares, stock, a working building), otherwise `else`. */
+  | { type: 'branch'; if: OptionRequirement; then: Effect[]; else?: Effect[] }
+  /** After this decision, a second decision about the same situation (e.g. what diagnostics found). */
+  | { type: 'followUp'; eventId: string }
 
 export type RiskTag = 'oxygen' | 'water' | 'food' | 'power' | 'radiation'
 
@@ -192,6 +207,19 @@ export interface EventVariant {
   onTrigger: Effect[]
 }
 
+/**
+ * A situation that cannot wait. In the immersive view the crew has `seconds`
+ * (scaled by rank) to decide; when time runs out, `effects` apply (what the
+ * delay cost) and then the `fallback` option runs, as the base's automatic
+ * systems or the rest of the crew would do.
+ */
+export interface EventUrgency {
+  seconds: number
+  fallback: string
+  effects?: Effect[]
+  note: string
+}
+
 export interface EventDef {
   id: string
   title: string
@@ -203,6 +231,7 @@ export interface EventDef {
   conditions?: EventTriggerConditions
   onTrigger: Effect[]
   variants?: Record<string, EventVariant>
+  urgency?: EventUrgency
   options: DecisionOption[]
 }
 
@@ -225,6 +254,7 @@ export interface Modifier {
   target?: BuildingId
   label: Message
   source: string
+  tag?: ModifierTag
 }
 
 export type LogKind = 'info' | 'success' | 'warning' | 'danger' | 'science'
@@ -248,6 +278,12 @@ export interface DecisionRecord {
   optionId: string
   risks: RiskTag[]
   notes: Message[]
+  /** True when the crew did not decide in time and the event's fallback ran. */
+  timedOut?: boolean
+  /** What the decision changed at once (stores, spare kits, dose). */
+  effect?: Partial<Record<'oxygen' | 'water' | 'food' | 'energy' | 'spares' | 'dose', number>>
+  /** For how many days its effects last (at least 1). */
+  window?: number
 }
 
 export interface DaySnapshot {
@@ -293,6 +329,8 @@ export type MissionStatus = 'running' | 'awaiting-decision' | 'success' | 'failu
 
 export interface MissionState {
   missionId: string
+  /** Crew rank (difficulty mode) the mission was launched with. See game/ranks.ts. */
+  rank: import('../game/ranks').RankId
   seed: number
   rng: number
   day: number
@@ -312,6 +350,8 @@ export interface MissionState {
   stats: MissionStats
   failure: { cause: FailureCause; day: number } | null
   nextUid: number
+  /** Science objective: samples collected on spacewalks. */
+  science: { samples: number; lastEvaDay: number }
 }
 
 /** Everything the engine needs that comes from JSON. */
@@ -338,18 +378,41 @@ export interface Lesson {
   alternatives: string[]
 }
 
+/**
+ * How much a value can be trusted, from the most solid to the most game-like:
+ * - physics: follows from a law of nature (e.g. the chemistry of electrolysis);
+ * - measured: measured in space (e.g. by the ISS or a lunar lander);
+ * - engineering: a reference value engineers design with (e.g. NASA's BVAD);
+ * - game: chosen or estimated to make the scenario playable.
+ */
+export type ScienceKind = 'physics' | 'measured' | 'engineering' | 'game'
+
 export interface ScienceParameter {
+  id: string
   name: string
-  value: number
-  unit: string
-  gameValue: number
-  source: string
+  kind: ScienceKind
+  /** The value the game uses (null when it is not a single number). */
+  value: number | null
+  unit?: string
+  /** Typical real-world range, when there is one. */
+  range?: string
+  /** Where it comes from; null for pure game choices. */
+  source: string | null
   note: string
+}
+
+/** A sample the crew can collect on a spacewalk, and what it teaches. */
+export interface ScienceSample {
+  id: string
+  name: string
+  text: string
+  source: string
 }
 
 export interface ScienceData {
   sources: Record<string, ScienceSource>
   parameters: ScienceParameter[]
+  samples: ScienceSample[]
   lessons: Record<FailureCause, Lesson>
   successLesson: Lesson
 }

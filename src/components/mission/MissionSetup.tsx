@@ -4,6 +4,11 @@
  */
 import { useMemo } from 'react'
 import { useApp } from '../../app/state/AppContext'
+import { planRules } from '../../app/state/appState'
+import { RANKS } from '../../game/ranks'
+import { RankInsignia } from '../art/RankInsignia'
+import { Icon, type IconName } from '../ui/Icon'
+import { SpaceBackdrop } from '../ui/SpaceBackdrop'
 import {
   checkLoadout,
   gameContent,
@@ -23,16 +28,18 @@ import { GlossaryText } from '../ui/Term'
 import { STOCK_META } from '../resources/stockMeta'
 
 const GROUPS = [
-  { title: 'setup.group.power', items: ['solar_array', 'battery'] },
-  { title: 'setup.group.lifeSupport', items: ['water_recycler', 'oxygen_generator', 'greenhouse'] },
-  { title: 'setup.group.protection', items: ['radiation_shelter'] },
-  { title: 'setup.group.supplies', items: ['oxygen_tank', 'water_crate', 'food_crate', 'spare_parts'] },
-] as const satisfies readonly { title: string; items: readonly LoadoutItemId[] }[]
+  { title: 'setup.group.power', icon: 'bolt', items: ['solar_array', 'battery'] },
+  { title: 'setup.group.lifeSupport', icon: 'recycle', items: ['water_recycler', 'oxygen_generator', 'greenhouse'] },
+  { title: 'setup.group.protection', icon: 'shield', items: ['radiation_shelter'] },
+  { title: 'setup.group.supplies', icon: 'toolbox', items: ['oxygen_tank', 'water_crate', 'food_crate', 'spare_parts'] },
+] as const satisfies readonly { title: string; icon: IconName; items: readonly LoadoutItemId[] }[]
 
 export function MissionSetup() {
   const { state, dispatch } = useApp()
   const { t, content: text } = useI18n()
-  const content = gameContent
+  // Mass budget depends on the chosen rank; everything else is the same science.
+  const content = planRules(state)
+  const rank = RANKS[state.rank]
   const mission = getMission(content, state.missionId)
   const { loadout } = state
   const check = checkLoadout(content, mission, loadout)
@@ -43,17 +50,20 @@ export function MissionSetup() {
 
   const remaining = check.budgetKg - check.massKg
   const warnings: string[] = []
+  // Planning tips are part of mission control's help, which senior ranks do without.
   if (loadout.solar_array === 0) warnings.push(t('setup.warn.noSolar'))
   if (projection.daysWithShedding > 0) warnings.push(t('setup.warn.shedding', { count: projection.daysWithShedding }))
   if (loadout.radiation_shelter === 0) warnings.push(t('setup.warn.noShelter'))
   if (loadout.spare_parts === 0) warnings.push(t('setup.warn.noSpares'))
+  if (!rank.hints) warnings.length = 0
 
   return (
-    <main className="starfield min-h-full px-4 py-8">
+    <main className="relative min-h-full px-4 py-8 sm:px-8">
+      <SpaceBackdrop />
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="ghost" onClick={() => dispatch({ type: 'navigate', screen: 'briefing' })}>
-            {t('setup.back')}
+            <Icon name="arrowLeft" /> {t('setup.back')}
           </Button>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => dispatch({ type: 'setLoadout', loadout: toLoadout({}) })}>{t('setup.clear')}</Button>
@@ -65,11 +75,20 @@ export function MissionSetup() {
         <p className="mt-1 max-w-3xl text-ink-2">
           <Rich text={t('setup.intro', { mass: fmt(mission.launchMassBudgetKg), mission: getMission(text, mission.id).name })} />
         </p>
+        {state.replay && (
+          <div className="mt-3 flex max-w-3xl flex-wrap items-center gap-3 rounded-xl border border-accent-2/40 bg-accent-2/10 p-3 text-sm" role="status">
+            <Icon name="retry" className="text-accent-2" />
+            <p className="flex-1 text-ink-2">{t('setup.replay')}</p>
+            <Button variant="ghost" onClick={() => dispatch({ type: 'cancelReplay' })}>
+              {t('setup.replayCancel')}
+            </Button>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">
             {GROUPS.map((g) => (
-              <Panel key={g.title} title={t(g.title)} id={`group-${g.title}`}>
+              <Panel key={g.title} title={t(g.title)} id={`group-${g.title}`} icon={g.icon}>
                 <ul className="divide-y divide-line">
                   {g.items.map((id) => (
                     <ItemRow key={id} id={id} count={loadout[id]} onSet={(n) => set(id, n)} remainingKg={remaining} />
@@ -80,7 +99,7 @@ export function MissionSetup() {
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start" aria-label={t('setup.forecastAria')}>
-            <Panel title={t('setup.mass.title')} id="mass">
+            <Panel title={t('setup.mass.title')} id="mass" icon="lander">
               <div className="space-y-2 p-4">
                 <div className="flex items-baseline justify-between">
                   <span className="font-display text-2xl">{t('setup.mass.value', { kg: fmt(check.massKg) })}</span>
@@ -95,7 +114,7 @@ export function MissionSetup() {
               </div>
             </Panel>
 
-            <Panel title={t('setup.storage.title')} id="storage">
+            <Panel title={t('setup.storage.title')} id="storage" icon="habitat">
               <div className="space-y-3 p-4">
                 {SUPPLY_STOCKS.map((s) => {
                   const st = check.storage[s]
@@ -104,7 +123,7 @@ export function MissionSetup() {
                     <div key={s}>
                       <div className="flex justify-between text-sm">
                         <span>
-                          <span aria-hidden>{meta.icon}</span> {t(`stock.${s}`)}
+                          <Icon name={meta.icon} style={{ color: meta.color }} /> {t(`stock.${s}`)}
                         </span>
                         <span className={st.over ? 'text-critical' : 'text-ink-2'}>
                           {t('setup.storage.line', { amount: fmt(st.amount), capacity: fmt(st.capacity), days: fmt(projection.launchDaysOfSupply[s], 1) })}
@@ -118,9 +137,16 @@ export function MissionSetup() {
               </div>
             </Panel>
 
-            <Panel title={t('setup.forecast.title')} id="forecast">
+            <Panel title={t('setup.forecast.title')} id="forecast" icon="chart">
               <div className="space-y-3 p-4 text-sm">
-                <p className="text-xs text-ink-3">{t('setup.forecast.intro', { days: mission.durationDays })}</p>
+                <p className="flex items-center gap-2 text-xs text-ink-3">
+                  <RankInsignia rank={state.rank} size={20} /> {t(`rank.${state.rank}.name`)}
+                </p>
+                {rank.forecast === 'none' ? (
+                  <p className="rounded-lg border border-hud-dim bg-space/50 p-3 text-ink-2">{t('setup.forecast.none')}</p>
+                ) : (
+                  <>
+                <p className="text-xs text-ink-3">{t(rank.forecast === 'full' ? 'setup.forecast.intro' : 'setup.forecast.summaryNote', { days: mission.durationDays })}</p>
                 <div className="flex items-center justify-between rounded-lg bg-panel-2 p-3">
                   <span>{t('setup.forecast.result')}</span>
                   {projection.survivesCalmMission || !projection.failure ? (
@@ -132,11 +158,12 @@ export function MissionSetup() {
                     />
                   )}
                 </div>
+                {rank.forecast === 'full' && (
                 <ul className="space-y-1">
                   {SUPPLY_STOCKS.map((s) => (
                     <li key={s} className="flex justify-between">
                       <span>
-                        <span aria-hidden>{STOCK_META[s].icon}</span> {t(`stock.${s}`)}
+                        <Icon name={STOCK_META[s].icon} style={{ color: STOCK_META[s].color }} /> {t(`stock.${s}`)}
                       </span>
                       {projection.runsOutDay[s] ? (
                         <StatusTag level="critical" word={t('setup.forecast.runsOut', { day: projection.runsOutDay[s]! })} />
@@ -146,23 +173,30 @@ export function MissionSetup() {
                     </li>
                   ))}
                   <li className="flex justify-between gap-2">
-                    <span>{t('setup.forecast.solar')}</span>
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="bolt" className="text-warn" /> {t('setup.forecast.solar')}
+                    </span>
                     <span className={projection.fullSunGenerationKwh >= projection.fullDemandKwh ? 'text-ink-2' : 'text-critical'}>
                       <GlossaryText text={t('setup.forecast.solarValue', { generation: fmt(projection.fullSunGenerationKwh), demand: fmt(projection.fullDemandKwh) })} />
                     </span>
                   </li>
                   <li className="flex justify-between gap-2">
-                    <span>{t('setup.forecast.battery')}</span>
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="battery" className="text-warn" /> {t('setup.forecast.battery')}
+                    </span>
                     <span className={projection.lowestEnergyKwh <= 0.5 ? 'text-critical' : 'text-ink-2'}>
                       <GlossaryText text={t('setup.forecast.batteryValue', { lowest: fmt(projection.lowestEnergyKwh), capacity: fmt(projection.batteryCapacityKwh) })} />
                     </span>
                   </li>
                 </ul>
+                )}
+                  </>
+                )}
                 {warnings.length > 0 && (
                   <ul className="space-y-1 rounded-lg border border-warn/30 bg-warn/10 p-3 text-xs">
                     {warnings.map((w) => (
                       <li key={w} className="flex gap-2">
-                        <span aria-hidden className="text-warn">▲</span>
+                        <Icon name="warning" className="text-warn" />
                         {w}
                       </li>
                     ))}
@@ -172,7 +206,7 @@ export function MissionSetup() {
             </Panel>
 
             <Button variant="primary" className="w-full py-3 text-base" disabled={!check.valid} onClick={() => dispatch({ type: 'launch' })}>
-              {t('setup.launch')}
+              <Icon name="rocket" size="1.3em" /> {t('setup.launch')}
             </Button>
             {!check.valid && <p className="text-center text-xs text-critical">{t('setup.fix')}</p>}
           </aside>
@@ -193,7 +227,7 @@ function ItemRow({ id, count, onSet, remainingKg }: { id: LoadoutItemId; count: 
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
       <div className="flex-1">
         <p className="font-semibold">
-          <span aria-hidden className="mr-1">{def.icon}</span>
+          <Icon name={def.icon} className="mr-1.5 text-hud" />
           {def.name} <span className="ml-1 text-xs font-normal text-ink-3">{t('item.each', { kg: fmt(mass) })}</span>
         </p>
         <p className="mt-0.5 text-sm text-ink-2">

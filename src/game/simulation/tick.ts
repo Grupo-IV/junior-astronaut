@@ -148,6 +148,15 @@ export function advanceDay(content: GameContent, state: MissionState, options: T
     log('warning', msg('sim.leak', { kg: round(lost, 1) }))
   }
 
+  // Cabin air escaping: like a water leak, it drains a share of what is stored.
+  const oxygenLoss = sum(s, 'oxygen_loss')
+  if (oxygenLoss > 0) {
+    const lost = s.stocks.oxygen * Math.min(1, oxygenLoss)
+    s.stocks.oxygen -= lost
+    flows.oxygen.consumed += lost
+    log('warning', msg('sim.oxygenLeak', { kg: round(lost, 1) }))
+  }
+
   const background = env.gcrDoseMsvPerDay * env.habitatGcrFactor
   const storm = sum(s, 'storm_dose')
   const stormReceived = storm * product(s, 'dose_factor')

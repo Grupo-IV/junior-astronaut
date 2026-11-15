@@ -3,7 +3,7 @@
     "solar_array": {
       "id": "solar_array",
       "name": "Solar Array",
-      "icon": "☀️",
+      "icon": "solar",
       "massKg": 400,
       "maxCount": 4,
       "powerDemandKwhPerDay": 0,
@@ -17,7 +17,7 @@
     "battery": {
       "id": "battery",
       "name": "Battery Storage",
-      "icon": "🔋",
+      "icon": "battery",
       "massKg": 250,
       "maxCount": 5,
       "powerDemandKwhPerDay": 0,
@@ -31,21 +31,21 @@
     "water_recycler": {
       "id": "water_recycler",
       "name": "Water Recycler",
-      "icon": "♻️",
+      "icon": "recycle",
       "massKg": 600,
       "maxCount": 1,
       "powerDemandKwhPerDay": 12,
       "shedPriority": 3,
       "waterRecoveryRate": 0.93,
-      "summary": "Recovers 93% of the water the crew uses — from humidity, washing and urine.",
+      "summary": "Recovers about 93% of the water the crew uses — from humidity, washing and urine.",
       "benefit": "Water lasts many times longer.",
       "tradeoff": "Heavy, needs power every day, and can break.",
-      "science": { "text": "The ISS Water Recovery System reclaims around 93% of water; with the Brine Processor it reached 98% in 2023.", "source": "eclssWater" }
+      "science": { "text": "Before 2023 the ISS recovered about 93–94% of its water. In 2023 NASA demonstrated 98% by adding a Brine Processor Assembly. The game uses 93%.", "source": "eclssWater" }
     },
     "greenhouse": {
       "id": "greenhouse",
       "name": "Greenhouse",
-      "icon": "🌱",
+      "icon": "sprout",
       "massKg": 900,
       "maxCount": 1,
       "powerDemandKwhPerDay": 40,
@@ -62,7 +62,7 @@
     "oxygen_generator": {
       "id": "oxygen_generator",
       "name": "Oxygen Generator",
-      "icon": "🫧",
+      "icon": "oxygen",
       "massKg": 500,
       "maxCount": 1,
       "powerDemandKwhPerDay": 30,
@@ -78,12 +78,13 @@
     "radiation_shelter": {
       "id": "radiation_shelter",
       "name": "Radiation Shelter",
-      "icon": "🛡️",
+      "icon": "shield",
       "massKg": 1200,
       "maxCount": 1,
       "powerDemandKwhPerDay": 4,
       "shedPriority": 4,
       "stormDoseFactor": 0.1,
+      "occupiedPowerKwhPerDay": 10,
       "summary": "Small room buried under bags of lunar soil (regolith). Blocks ~90% of solar-storm radiation.",
       "benefit": "Protects the crew during solar storms.",
       "tradeoff": "The heaviest item you can bring — and useless on a calm day.",
@@ -94,7 +95,7 @@
     "water_crate": {
       "id": "water_crate",
       "name": "Water Tank",
-      "icon": "💧",
+      "icon": "water",
       "massKg": 115,
       "maxCount": 6,
       "stock": "water",
@@ -105,7 +106,7 @@
     "oxygen_tank": {
       "id": "oxygen_tank",
       "name": "Oxygen Tank",
-      "icon": "🫁",
+      "icon": "oxygen",
       "massKg": 45,
       "maxCount": 8,
       "stock": "oxygen",
@@ -116,7 +117,7 @@
     "food_crate": {
       "id": "food_crate",
       "name": "Food Crate",
-      "icon": "🥫",
+      "icon": "food",
       "massKg": 50,
       "maxCount": 8,
       "stock": "food",
@@ -127,7 +128,7 @@
     "spare_parts": {
       "id": "spare_parts",
       "name": "Spare Parts Kit",
-      "icon": "🧰",
+      "icon": "toolbox",
       "massKg": 80,
       "maxCount": 4,
       "summary": "Pumps, valves, seals and circuit boards. One kit fixes one broken system.",

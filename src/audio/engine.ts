@@ -14,11 +14,19 @@ import { isMuted, subscribeMuted } from './settings'
 /** Overall loudness. Kept low on purpose: sound is feedback, not the main channel. */
 const MASTER_VOLUME = 0.45
 const HUM_VOLUME = 0.05
+const LEAK_VOLUME = 0.07
 const CLICK_VOLUME = 0.32
 const LOOKAHEAD_S = 0.15
 const SCHEDULER_MS = 50
 
 type Wave = OscillatorType
+
+/**
+ * Short feedback sounds of the first-person view. Each one doubles something
+ * the player already sees: a console lighting up, the selection frame, a
+ * hand at work, the hatch closing, the outcome card.
+ */
+export type Fx = 'interact' | 'select' | 'confirm' | 'repair' | 'seal' | 'resolved' | 'failed' | 'tick'
 
 class AudioEngine {
   private ctx: AudioContext | null = null
@@ -28,6 +36,7 @@ class AudioEngine {
   private unlockInstalled = false
 
   private hum: { gain: GainNode; filter: BiquadFilterNode; sources: AudioScheduledSourceNode[] } | null = null
+  private leak: { gain: GainNode; flutter: GainNode; sources: AudioScheduledSourceNode[] } | null = null
   private humStopTimer: number | null = null
 
   private clickRate = 0
@@ -120,6 +129,15 @@ class AudioEngine {
       case 'storm':
         this.stormAlert(t)
         break
+      case 'emergency':
+        // Fast high-low siren: the depressurisation class of alarm.
+        for (let i = 0; i < 5; i++) {
+          this.tone('square', 1046, 1046, t + i * 0.44, 0.2, 0.05)
+          this.tone('sine', 1046, 1046, t + i * 0.44, 0.2, 0.13)
+          this.tone('square', 698, 698, t + i * 0.44 + 0.22, 0.2, 0.05)
+          this.tone('sine', 698, 698, t + i * 0.44 + 0.22, 0.2, 0.13)
+        }
+        break
       case 'success':
         ;[523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone('sine', f, f, t + i * 0.13, 0.55, 0.13))
         break
@@ -127,6 +145,66 @@ class AudioEngine {
         ;[392, 311.13, 233.08].forEach((f, i) => this.tone('triangle', f, f * 0.98, t + i * 0.45, 0.6, 0.16))
         break
     }
+  }
+
+  /** Feedback for an action in first person (always paired with something visible). */
+  fx(name: Fx) {
+    if (isMuted()) return
+    const ctx = this.running()
+    if (!ctx) return
+    const t = ctx.currentTime + 0.01
+    switch (name) {
+      case 'interact':
+        this.noiseBurst(t, 0.02, 2600, 0.12)
+        this.tone('triangle', 1320, 1320, t + 0.01, 0.07, 0.07)
+        break
+      case 'select':
+        this.tone('sine', 2093, 2093, t, 0.035, 0.05)
+        break
+      case 'confirm':
+        this.tone('triangle', 659, 659, t, 0.09, 0.12)
+        this.tone('triangle', 988, 988, t + 0.09, 0.16, 0.12)
+        break
+      case 'repair':
+        // Ratchet clicks and the thump of a tool on metal.
+        for (let i = 0; i < 6; i++) this.noiseBurst(t + i * 0.075, 0.018, 3200, 0.16)
+        this.tone('sine', 150, 70, t + 0.5, 0.18, 0.18)
+        break
+      case 'seal':
+        // Hatch motor, then the latch closing.
+        this.tone('sawtooth', 95, 62, t, 0.9, 0.035)
+        this.tone('sine', 95, 62, t, 0.9, 0.08)
+        this.tone('sine', 90, 40, t + 0.92, 0.25, 0.28)
+        this.noiseBurst(t + 0.92, 0.05, 900, 0.2)
+        break
+      case 'resolved':
+        this.tone('sine', 784, 784, t, 0.3, 0.1)
+        this.tone('sine', 988, 988, t + 0.12, 0.42, 0.1)
+        break
+      case 'failed':
+        this.tone('square', 116, 110, t, 0.38, 0.05)
+        this.tone('sine', 116, 110, t, 0.38, 0.12)
+        break
+      case 'tick':
+        this.tone('sine', 1760, 1760, t, 0.03, 0.06)
+        break
+    }
+  }
+
+  private noiseBurst(start: number, duration: number, frequency: number, peak: number) {
+    const ctx = this.ctx!
+    const src = ctx.createBufferSource()
+    src.buffer = this.noise
+    const band = ctx.createBiquadFilter()
+    band.type = 'bandpass'
+    band.frequency.value = frequency
+    band.Q.value = 1.2
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(peak, start)
+    env.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+    src.connect(band).connect(env).connect(this.sfx!)
+    src.start(start, Math.random() * 1.5)
+    src.stop(start + duration + 0.02)
   }
 
   /**
@@ -261,9 +339,41 @@ class AudioEngine {
     this.hum = { gain, filter, sources: [air, blade] }
   }
 
+  /** Hiss of air escaping through a breach, 0..1 (see `airLeakLevel`). */
+  setLeak(level: number) {
+    const ctx = this.context()
+    if (!ctx) return
+    if (level > 0 && !this.leak) {
+      const gain = ctx.createGain()
+      gain.gain.value = 0
+      const flutter = ctx.createGain()
+      flutter.gain.value = 1
+      const band = ctx.createBiquadFilter()
+      band.type = 'bandpass'
+      band.frequency.value = 4800
+      band.Q.value = 0.7
+      const src = ctx.createBufferSource()
+      src.buffer = this.noise
+      src.loop = true
+      // A slow wobble: turbulent flow through a crack is never perfectly steady.
+      const lfo = ctx.createOscillator()
+      lfo.frequency.value = 0.7
+      const depth = ctx.createGain()
+      depth.gain.value = 0.25
+      lfo.connect(depth).connect(flutter.gain)
+      src.connect(band).connect(flutter).connect(gain).connect(this.master!)
+      src.start()
+      lfo.start()
+      this.leak = { gain, flutter, sources: [src, lfo] }
+    }
+    if (!this.leak) return
+    this.leak.gain.gain.setTargetAtTime(level * LEAK_VOLUME, ctx.currentTime, level === 0 ? 0.25 : 0.6)
+  }
+
   /** Fades out every continuous sound (leaving the outpost screen). */
   stopAmbient() {
     this.setRadiation(0)
+    this.setLeak(0)
     if (!this.hum || !this.ctx) return
     this.setHum(0)
     const hum = this.hum

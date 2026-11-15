@@ -3,14 +3,16 @@
  * @brief Displays infrastructure status and maintenance actions.
  */
 import { useApp } from '../../app/state/AppContext'
-import { canRepair, gameContent, isGreenhouseProductive, wantsToRun } from '../../game'
+import { canRepair, gameContent, isGreenhouseProductive, shelterProtection, shelterStatus, wantsToRun } from '../../game'
 import type { I18n } from '../../i18n/useI18n'
 import { useI18n } from '../../i18n/useI18n'
 import type { BuildingInstance, MissionState } from '../../types/game'
 import { Button, Panel, SourceLink, StatusTag, type Level } from '../ui/ui'
+import { Icon } from '../ui/Icon'
 import { GlossaryText } from '../ui/Term'
 
-function statusOf(t: I18n['t'], mission: MissionState, b: BuildingInstance): { level: Level; word: string } {
+/** Status tag of a structure, as shown in the Systems panel and on the habitat consoles. */
+export function buildingStatus(t: I18n['t'], mission: MissionState, b: BuildingInstance): { level: Level; word: string } {
   const def = gameContent.buildings[b.defId]
   if (b.status === 'failed') return { level: 'critical', word: t('sys.broken') }
   if (!b.enabled) return { level: 'neutral', word: t('sys.off') }
@@ -30,11 +32,11 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
   const unpowered = mission.lastReport?.habitatUnpowered
 
   return (
-    <Panel title={t('sys.title', { count: mission.spareParts })} id="systems-title">
+    <Panel title={t('sys.title', { count: mission.spareParts })} id="systems-title" icon="toolbox">
       <div className="p-2">
         <div className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm">
           <span>
-            <span aria-hidden>🏠</span> {t('sys.habitat')}{' '}
+            <Icon name="habitat" className="text-hud" /> {t('sys.habitat')}{' '}
             <span className="text-xs text-ink-3">
               <GlossaryText text={t('sys.perDay', { kwh: gameContent.environment.habitat.powerDemandKwhPerDay })} />
             </span>
@@ -45,7 +47,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
         <ul>
           {mission.buildings.map((b) => {
             const def = content.buildings[b.defId]
-            const st = statusOf(t, mission, b)
+            const st = buildingStatus(t, mission, b)
             const isSel = b.uid === selectedUid
             return (
               <li key={b.uid}>
@@ -56,7 +58,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
                   className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-panel-2 ${isSel ? 'bg-panel-2 ring-1 ring-accent-2' : ''}`}
                 >
                   <span>
-                    <span aria-hidden>{def.icon}</span> {def.name}
+                    <Icon name={def.icon} className="text-hud" /> {def.name}
                     {mission.buildings.filter((x) => x.defId === b.defId).length > 1 ? ` #${b.uid.split('-').at(-1)}` : ''}
                   </span>
                   <StatusTag level={st.level} word={st.word} />
@@ -76,7 +78,7 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
             return (
               <>
                 <p className="font-display text-base font-bold">
-                  {def.icon} {def.name}
+                  <Icon name={def.icon} className="text-hud" /> {def.name}
                 </p>
                 <p className="mt-1 text-ink-2">
                   <GlossaryText text={def.summary} />
@@ -96,17 +98,34 @@ export function SystemsPanel({ mission, selectedUid, onSelect }: { mission: Miss
                 <div className="mt-3 flex flex-wrap gap-2">
                   {kwh > 0 && (
                     <Button disabled={!canAct} onClick={() => dispatch({ type: 'toggleBuilding', uid: selected.uid })}>
-                      {selected.enabled ? t('sys.switchOff', { kwh }) : t('sys.switchOn', { kwh })}
+                      <Icon name="power" /> {selected.enabled ? t('sys.switchOff', { kwh }) : t('sys.switchOn', { kwh })}
                     </Button>
                   )}
                   {selected.status === 'failed' && (
                     <Button variant="primary" disabled={!canAct || !repair.possible} onClick={() => dispatch({ type: 'repairBuilding', uid: selected.uid })}>
-                      {repair.withSpare ? t('sys.repairSpare') : t('sys.repairImprovised')}
+                      <Icon name={repair.withSpare ? 'toolbox' : 'wrench'} /> {repair.withSpare ? t('sys.repairSpare') : t('sys.repairImprovised')}
                     </Button>
                   )}
                 </div>
+                {selected.defId === 'radiation_shelter' &&
+                  (() => {
+                    const shelter = shelterStatus(gameContent, mission)
+                    if (!shelter.canEnter && !shelter.canLeave) return null
+                    return (
+                      <div className="mt-2">
+                        <Button variant={shelter.canEnter ? 'primary' : 'danger'} onClick={() => dispatch({ type: shelter.canEnter ? 'takeShelter' : 'leaveShelter' })}>
+                          <Icon name="shield" /> {shelter.canEnter ? t('panel.shelter.take') : t('panel.shelter.leave')}
+                        </Button>
+                        <p className="mt-1 text-xs text-ink-3">
+                          {shelter.canEnter ? t('panel.shelter.walls', { percent: Math.round(shelterProtection(gameContent) * 100) }) : t('panel.shelter.leaveWarn')}
+                        </p>
+                      </div>
+                    )
+                  })()}
                 {selected.defId === 'greenhouse' && selected.enabled && selected.growth > 0 && (
-                  <p className="mt-2 text-xs text-warn">{t('sys.greenhouseWarning')}</p>
+                  <p className="mt-2 flex gap-1.5 text-xs text-warn">
+                    <Icon name="warning" /> {t('sys.greenhouseWarning')}
+                  </p>
                 )}
                 {repair.reason && <p className="mt-2 text-xs text-ink-3">{m(repair.reason)}</p>}
               </>
