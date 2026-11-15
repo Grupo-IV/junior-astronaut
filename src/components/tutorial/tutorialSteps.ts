@@ -10,7 +10,7 @@ export type TourPhase = 'PLAN' | 'OPERATE' | 'DECIDE'
 
 export const TOUR_PHASES: TourPhase[] = ['PLAN', 'OPERATE', 'DECIDE']
 
-export type TourTarget = 'mission-clock' | 'resources' | 'systems' | 'viewport' | 'time-controls' | 'mission-log' | 'help'
+export type TourTarget = 'mission-clock' | 'resources' | 'systems' | 'viewport' | 'view-toggle' | 'time-controls' | 'mission-log' | 'help'
 
 export interface TourContext {
   crew: number
@@ -18,7 +18,7 @@ export interface TourContext {
 }
 
 /** Texts live in the i18n dictionaries as `tour.<id>.title` and `tour.<id>.body`. */
-export type TourStepId = 'welcome' | 'resources' | 'systems' | 'viewport' | 'time' | 'log' | 'help'
+export type TourStepId = 'welcome' | 'resources' | 'systems' | 'viewport' | 'immersive' | 'time' | 'log' | 'help'
 
 export interface TourStep {
   id: TourStepId
@@ -31,6 +31,7 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'resources', target: 'resources', phase: 'PLAN' },
   { id: 'systems', target: 'systems', phase: 'PLAN' },
   { id: 'viewport', target: 'viewport', phase: 'PLAN' },
+  { id: 'immersive', target: 'view-toggle', phase: 'OPERATE' },
   { id: 'time', target: 'time-controls', phase: 'OPERATE' },
   { id: 'log', target: 'mission-log', phase: 'DECIDE' },
   { id: 'help', target: 'help', phase: null },

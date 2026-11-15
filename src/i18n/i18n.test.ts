@@ -126,8 +126,8 @@ describe('engine messages', () => {
 
   it('Portuguese messages use Portuguese content names', () => {
     const m: Message = { key: 'sim.shed', args: { buildings: { ref: 'buildings', ids: ['greenhouse', 'water_recycler'] } } }
-    expect(renderMessage('pt', m)).toBe('⚡ Energia insuficiente — desligados automaticamente: Estufa e Reciclador de Água.')
-    expect(renderMessage('en', m)).toBe('⚡ Not enough power — automatically switched off: Greenhouse and Water Recycler.')
+    expect(renderMessage('pt', m)).toBe('Energia insuficiente — desligados automaticamente: Estufa e Reciclador de Água.')
+    expect(renderMessage('en', m)).toBe('Not enough power — automatically switched off: Greenhouse and Water Recycler.')
   })
 })
 
@@ -154,6 +154,8 @@ describe('no hard-coded interface text', () => {
   it('components put visible words through t()', () => {
     const problems: string[] = []
     for (const [file, src] of Object.entries(sources)) {
+      // Pure SVG drawings (icon set, illustrations) contain no words.
+      if (file.includes('/art/') || file.endsWith('/Icon.tsx')) continue
       // JSX text between tags with at least one word of 3+ letters.
       for (const m of src.matchAll(/>\s*([^<>{}]*\p{L}{3,}[^<>{}]*)\s*</gu)) {
         // Skip code that only looks like text: comparisons (`a < b.c > d`), arrows, property access.

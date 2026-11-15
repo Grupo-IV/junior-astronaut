@@ -7,11 +7,15 @@ export { createMissionState } from './missions/createMission'
 export { illuminationFor, illuminationPeriod } from './missions/illumination'
 export { advanceDay } from './simulation/tick'
 export { toggleBuilding, repairBuilding, canRepair } from './simulation/actions'
+export { takeShelter, leaveShelter, shelterStatus, crewInShelter, stormDaysLeft, shelterProtection, type ShelterCheck } from './simulation/shelter'
 export { projectLoadout, type LoadoutProjection } from './simulation/projection'
 export { newSeed } from './simulation/rng'
-export { resolveDecision, optionAvailability, eventDef } from './events/events'
+export { resolveDecision, optionAvailability, eventDef, decisionTimeLimit, type ResolveOptions } from './events/events'
 export { scoreMission, type MissionScore } from './rules/scoring'
 export { analyzeMission, type MissionAnalysis } from './rules/analysis'
+export { decisionTimeline, type DecisionStory } from './rules/timeline'
+export { summarizeRun, compareRuns, type RunSummary, type RunComparison } from './rules/summary'
+export { evaStatus, goOnEva, type EvaCheck } from './simulation/eva'
 export {
   BUILDING_IDS,
   CARGO_IDS,
@@ -26,4 +30,5 @@ export {
   type LoadoutCheck,
   type SupplyStock,
 } from './resources/loadout'
+export { RANKS, RANK_IDS, contentForRank, recommendedRank, type RankId, type RankDef } from './ranks'
 export { stateBatteryCapacity, wantsToRun, isGreenhouseProductive } from './buildings/buildings'

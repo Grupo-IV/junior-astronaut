@@ -27,6 +27,12 @@ function runUntil(stop: (s: MissionState) => boolean): MissionState {
 }
 
 const atEvent = runUntil((s) => s.status === 'awaiting-decision')
+
+/** The cadet mission with an oxygen leak on day 2 (the first fully staged emergency). */
+function atLeak(): MissionState {
+  const content = { ...gameContent, missions: gameContent.missions.map((m) => ({ ...m, scheduledEvents: [{ day: 2, eventId: 'oxygen_leak' }] })) }
+  return advanceDay(content, createMissionState(content, MISSION.id, toLoadout({ ...MISSION.recommendedLoadout, spare_parts: 1 }), 3))
+}
 const finished = runUntil((s) => s.status === 'success' || s.status === 'failure')
 
 const SCREENS: { name: string; state: () => AppState }[] = [
@@ -44,6 +50,9 @@ const SCREENS: { name: string; state: () => AppState }[] = [
     },
   },
   { name: 'result', state: () => ({ ...initialAppState(), screen: 'result', mission: finished }) },
+  { name: 'first person', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: createMissionState(gameContent, MISSION.id, loadout, 3) }) },
+  { name: 'first person decision', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: atEvent }) },
+  { name: 'first person oxygen leak', state: () => ({ ...initialAppState(), screen: 'outpost', view: 'firstPerson', mission: atLeak() }) },
 ]
 
 function render(state: AppState): string {
@@ -79,4 +88,23 @@ describe('every screen in Portuguese', () => {
       expect(text.length).toBeGreaterThan(100)
     })
   }
+})
+
+describe('the science notes in Portuguese', () => {
+  it('list every value with its kind and no English text', async () => {
+    const { ScienceNotes } = await import('../components/science/ScienceNotes')
+    const previous = getLocale()
+    setLocale('pt')
+    const html = renderToString(createElement(AppProvider, { initialState: initialAppState(), children: createElement(ScienceNotes, { onClose: () => {} }) }))
+    setLocale(previous)
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/&#x27;|&quot;|&amp;/g, ' ')
+    for (const kind of ['Lei da natureza', 'Medido no espaço', 'Referência de engenharia', 'Escolha ou estimativa do jogo']) expect(text).toContain(kind)
+    expect(text).toContain('Oxigénio usado por astronauta')
+    // Cited publications keep their original titles (apostrophes are escaped in the HTML).
+    const prose = Object.values(gameContent.science.sources)
+      .reduce((acc, s) => acc.split(s.title.replace(/'/g, ' ')).join(' '), text)
+      .replace(ALLOWED, ' ')
+    const leftovers = [...prose.matchAll(new RegExp(ENGLISH, 'gi'))].map((m) => prose.slice(Math.max(0, m.index - 60), m.index + 40))
+    expect(leftovers).toEqual([])
+  })
 })

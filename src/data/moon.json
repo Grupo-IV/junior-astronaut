@@ -30,9 +30,10 @@
       ],
       "scheduledEvents": [{ "day": 5, "eventId": "solar_storm", "variant": "moderate" }],
       "randomEventChancePerDay": 0.15,
-      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "randomEventPool": ["power_failure", "water_leak", "oxygen_leak", "equipment_failure", "crop_failure"],
       "firstRandomEventDay": 3,
       "minDaysBetweenEvents": 2,
+      "scienceGoal": 2,
       "recommendedLoadout": {
         "solar_array": 2,
         "battery": 2,
@@ -48,7 +49,8 @@
         "objectives": [
           "Keep oxygen, water and food above zero for 12 days",
           "Keep the base powered — life support cannot switch off",
-          "Keep the crew's radiation dose below 250 mSv"
+          "Keep the crew's radiation dose under the game's mission limit (250 mSv)",
+          "Science bonus: collect 2 samples on spacewalks (EVA)"
         ],
         "hazards": [
           "A solar storm is forecast for day 5",
@@ -81,9 +83,10 @@
         { "day": 22, "eventId": "solar_storm", "variant": "severe" }
       ],
       "randomEventChancePerDay": 0.18,
-      "randomEventPool": ["power_failure", "water_leak", "equipment_failure", "crop_failure"],
+      "randomEventPool": ["power_failure", "water_leak", "oxygen_leak", "equipment_failure", "crop_failure"],
       "firstRandomEventDay": 3,
       "minDaysBetweenEvents": 2,
+      "scienceGoal": 4,
       "recommendedLoadout": {
         "solar_array": 3,
         "battery": 3,
@@ -102,10 +105,11 @@
         "objectives": [
           "Survive 28 days with a crew of 4",
           "Close the loop: recycle and produce what storage can't hold",
-          "Keep the crew's radiation dose below 250 mSv"
+          "Keep the crew's radiation dose under the game's mission limit (250 mSv)",
+          "Science bonus: collect 4 samples on spacewalks (EVA)"
         ],
         "hazards": [
-          "Two solar storms: day 10 (moderate) and day 22 (severe)",
+          "Two solar storms: day 10 (strong) and day 22 (severe)",
           "Two shadow periods — the second one is very dark",
           "Random equipment failures, dust, leaks and crop disease"
         ],

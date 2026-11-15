@@ -64,6 +64,11 @@
       "title": "NASA's Plan for Sustained Lunar Exploration and Development (Artemis Base Camp)",
       "org": "NASA",
       "url": "https://www.nasa.gov/wp-content/uploads/2020/08/a_sustained_lunar_presence_nspc_report4220final.pdf"
+    },
+    "lunarIllumination": {
+      "title": "Lunar Polar Illumination (LOLA maps); Mazarico et al., Icarus 211, 1066–1081 (2011)",
+      "org": "NASA Goddard Planetary Geodesy Data Archive",
+      "url": "https://pgda.gsfc.nasa.gov/products/69"
     }
   },
   "parameters": [
@@ -82,6 +87,196 @@
     { "name": "Spacewalk (EVA) dose", "value": 0.46, "unit": "mSv per EVA (~8 h, GCR only)", "gameValue": 0.5, "source": "radiation", "note": "Derived: 1.37 mSv/day × 8/24 h = 0.46, rounded to 0.5 in the game. Approximation; ignores suit shielding and solar activity." },
     { "name": "Li-ion battery specific energy", "value": 220, "unit": "Wh/kg (battery level)", "gameValue": 240, "source": "powerRoadmap", "note": "Published 2011 battery-level goals: 150 Wh/kg (High Energy) and 220 Wh/kg (Ultra High Energy). The game's 240 Wh/kg (60 kWh module = 250 kg) is ~9% above the 2011 goal. Limited validation: the original 2015 TA 3 roadmap is no longer online." },
     { "name": "Typical crew size", "value": 4, "unit": "astronauts", "gameValue": 4, "source": "artemis", "note": "Artemis crews are planned around four astronauts." }
+    {
+      "id": "oxygen",
+      "name": "Oxygen used per astronaut",
+      "kind": "engineering",
+      "value": 0.84,
+      "unit": "kg/day",
+      "source": "bvad",
+      "note": "NASA's design value for an average crew member. Real use changes with body size and exercise."
+    },
+    {
+      "id": "water",
+      "name": "Water used per astronaut",
+      "kind": "engineering",
+      "value": 3.5,
+      "unit": "kg/day",
+      "source": "bvad",
+      "note": "A simplified budget for drinking, food and minimal hygiene, based on NASA design figures. Showers and laundry would need more."
+    },
+    {
+      "id": "food",
+      "name": "Food per astronaut, with packaging",
+      "kind": "engineering",
+      "value": 1.8,
+      "unit": "kg/day",
+      "source": "bvad",
+      "note": "Packaged, ISS-style food."
+    },
+    {
+      "id": "waterRecovery",
+      "name": "Water recovered by the recycler",
+      "kind": "measured",
+      "value": 93,
+      "unit": "%",
+      "range": "93–98%",
+      "source": "eclssWater",
+      "note": "Measured on the ISS: about 93–94% before 2023. In 2023 NASA demonstrated 98% by adding a Brine Processor Assembly. The game keeps 93%."
+    },
+    {
+      "id": "electrolysis",
+      "name": "Water split to make 1 kg of oxygen",
+      "kind": "physics",
+      "value": 1.125,
+      "unit": "kg",
+      "source": "eclss",
+      "note": "Chemistry: 2 H₂O → 2 H₂ + O₂. 36 g of water give 32 g of oxygen."
+    },
+    {
+      "id": "cosmicDose",
+      "name": "Cosmic-ray dose on the lunar surface",
+      "kind": "measured",
+      "value": 1.37,
+      "unit": "mSv/day",
+      "source": "radiation",
+      "note": "Dose equivalent measured by China's Chang'e-4 lander in 2019 (1369 µSv per day), near solar minimum. It changes with the Sun's 11-year cycle."
+    },
+    {
+      "id": "habitatShielding",
+      "name": "Share of cosmic-ray dose that gets through the habitat walls",
+      "kind": "game",
+      "value": 70,
+      "unit": "%",
+      "source": "radiation",
+      "note": "A game choice. Thin walls stop little of the very energetic cosmic rays, so most of the dose gets through."
+    },
+    {
+      "id": "stormStrong",
+      "name": "Storm dose inside the habitat, strong storm (NOAA S3)",
+      "kind": "game",
+      "value": 60,
+      "unit": "mSv/day",
+      "source": "swpc",
+      "note": "Scenario estimate. The NOAA S-scale counts fast protons (10 MeV or more) arriving near Earth: S3 means 1,000 per cm² per second per steradian. It does not give the dose inside a habitat, which depends on the storm and on the walls."
+    },
+    {
+      "id": "stormSevere",
+      "name": "Storm dose inside the habitat, severe storm (NOAA S4)",
+      "kind": "game",
+      "value": 110,
+      "unit": "mSv/day",
+      "source": "swpc",
+      "note": "Scenario estimate, like the one above. S4 means 10,000 protons per cm² per second per steradian."
+    },
+    {
+      "id": "shelter",
+      "name": "Storm dose blocked by the shelter",
+      "kind": "game",
+      "value": 90,
+      "unit": "%",
+      "source": "radiation",
+      "note": "Scenario estimate of the order of magnitude: thick regolith or water stops most solar-storm protons, but the exact share depends on the storm and on how thick the shielding is."
+    },
+    {
+      "id": "doseLimit",
+      "name": "Mission dose limit in the game",
+      "kind": "game",
+      "value": 250,
+      "unit": "mSv",
+      "source": "std3001",
+      "note": "A game rule: the mission ends if the crew's total dose reaches it. It is inspired by NASA's 30-day limit for blood-forming organs (250 mGy-Eq), which is a different dose quantity. NASA also caps each astronaut's whole-career effective dose at 600 mSv. Real limits guide planning: they are not a line where people suddenly fall ill."
+    },
+    {
+      "id": "doseGoal",
+      "name": "Low-dose goal for the star",
+      "kind": "game",
+      "value": 100,
+      "unit": "mSv",
+      "source": null,
+      "note": "A game goal to reward good protection, not a NASA value."
+    },
+    {
+      "id": "evaDose",
+      "name": "Extra dose for one spacewalk (EVA)",
+      "kind": "game",
+      "value": 0.5,
+      "unit": "mSv",
+      "source": "radiation",
+      "note": "Game estimate, rounded up: outside, the crew loses the little protection of the habitat walls for a few hours."
+    },
+    {
+      "id": "battery",
+      "name": "Battery energy per kilogram",
+      "kind": "engineering",
+      "value": 240,
+      "unit": "Wh/kg",
+      "range": "150–250 Wh/kg",
+      "source": "powerRoadmap",
+      "note": "Space-rated lithium-ion packs store about 150–250 Wh per kg. The game battery stores 60 kWh and weighs 250 kg."
+    },
+    {
+      "id": "solarArray",
+      "name": "Solar array output in full sun",
+      "kind": "game",
+      "value": 90,
+      "unit": "kWh/day",
+      "source": "powerRoadmap",
+      "note": "Game value for one array. Real output depends on panel area, Sun tracking and dust."
+    },
+    {
+      "id": "habitatPower",
+      "name": "Habitat power for heat, air and radio",
+      "kind": "game",
+      "value": 45,
+      "unit": "kWh/day",
+      "source": null,
+      "note": "Game value, chosen to make power planning matter."
+    },
+    {
+      "id": "oxygenGenerator",
+      "name": "Oxygen generator output",
+      "kind": "game",
+      "value": 4,
+      "unit": "kg/day",
+      "source": "eclss",
+      "note": "Game value. Real electrolysers are sized for their crew."
+    },
+    {
+      "id": "greenhouseGrowth",
+      "name": "Days before the greenhouse gives food",
+      "kind": "game",
+      "value": 7,
+      "unit": "days",
+      "source": "plants",
+      "note": "Game simplification so the effect shows within a mission. Real crops take weeks: lettuce on the ISS takes about a month."
+    },
+    {
+      "id": "greenhouseOutput",
+      "name": "Greenhouse harvest once grown",
+      "kind": "game",
+      "value": 2,
+      "unit": "kg/day",
+      "source": "plants",
+      "note": "Game value, with 0.8 kg of oxygen a day from photosynthesis."
+    },
+    {
+      "id": "illumination",
+      "name": "Light and shadow periods of each mission",
+      "kind": "game",
+      "value": null,
+      "source": "lunarIllumination",
+      "note": "Simplified scenarios, not a real calendar. Near the south pole, sunlight depends on the terrain around each spot: a few high rims are lit most of the time, crater floors almost never. Real calendars are computed from laser maps of the terrain (LOLA)."
+    },
+    {
+      "id": "crew",
+      "name": "Crew size",
+      "kind": "engineering",
+      "value": 4,
+      "unit": "astronauts",
+      "source": "artemis",
+      "note": "Artemis missions are planned around four astronauts."
+    }
   ],
   "lessons": {
     "oxygen": {
@@ -133,6 +328,8 @@
     "radiation": {
       "title": "Radiation dose exceeded the safety limit",
       "what": "The crew's radiation dose passed 250 mSv, this mission's safety limit (a game simplification based on NASA's short-term radiation values). Mission control ordered an emergency return.",
+      "title": "Radiation dose reached the mission's limit",
+      "what": "The crew's radiation dose reached 250 mSv, the limit this game uses for a mission. Mission control brought the crew home early.",
       "why": "The Moon has no magnetic field or thick atmosphere. During a solar storm, the dose inside a thin-walled habitat can rise to tens of mSv per day.",
       "principle": "Radiation protection = time + distance + shielding. You can't control the Sun, so you need mass (regolith, water) between the crew and the storm.",
       "alternatives": [
@@ -152,5 +349,19 @@
       "Try a different choice during the solar storm and compare the dose",
       "Take on the Commander mission: 28 days at Artemis Base Camp"
     ]
-  }
+  },
+  "samples": [
+    {
+      "id": "regolith",
+      "name": "Lunar soil (regolith)",
+      "source": "dust",
+      "text": "Lunar soil grains are sharp and glassy: on the Moon there is no wind or water to round them. They scratch suits and clog seals."
+    },
+    {
+      "id": "coldTrap",
+      "name": "Soil from the edge of a shadowed crater",
+      "source": "southPole",
+      "text": "Some craters near the south pole never see the Sun. They are cold traps that may hold water ice, one reason Artemis plans to land there."
+    }
+  ]
 }

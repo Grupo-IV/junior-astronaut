@@ -102,8 +102,12 @@ def main() -> int:
             req = o.get("requires", {})
             if "building" in req:
                 check(req["building"] in buildings, f"{e['id']}/{o['id']} requires a known building")
+    kinds = {"physics", "measured", "engineering", "game"}
     for p in sci["parameters"]:
-        check(p["source"] in source_keys, f"Source exists for parameter '{p['name']}'")
+        check(p.get("kind") in kinds, f"Parameter '{p['name']}' says what kind of value it is")
+        # Only game choices may have no source; every real-world value must cite one.
+        ok = p["source"] in source_keys or (p["source"] is None and p.get("kind") == "game")
+        check(ok, f"Source exists for parameter '{p['name']}'")
     for m in moon["missions"]:
         for s in m["scheduledEvents"]:
             ok = s["eventId"] in events and (not s.get("variant") or s["variant"] in events[s["eventId"]].get("variants", {}))

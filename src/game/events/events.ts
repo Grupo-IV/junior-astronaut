@@ -1,9 +1,9 @@
 /**
- * @brief Resolves the selected decision and resumes the mission.
  * @file
  * @brief Triggers mission events and resolves player decisions.
  */
 import type {
+  DecisionRecord,
   Message,
   DecisionOption,
   EventDef,
@@ -13,9 +13,11 @@ import type {
 } from '../../types/game'
 import { getMission } from '../content'
 import { hasOperational, isGreenhouseProductive } from '../buildings/buildings'
+import { unmetRequirement } from './requirements'
 import { pick, random } from '../simulation/rng'
-import { applyEffects } from './effects'
-import { msg, ref } from '../messages'
+import { applyEffects, type EffectContext } from './effects'
+import { contentText, msg, ref } from '../messages'
+import { RANKS, type RankId } from '../ranks'
 
 export function eventDef(content: GameContent, id: string): EventDef {
   const def = content.events[id]
@@ -47,26 +49,8 @@ export function optionAvailability(
   state: MissionState,
   option: DecisionOption,
 ): OptionAvailability {
-  const req = option.requires
-  if (!req) return { available: true }
-  if (req.building && !hasOperational(state, req.building)) {
-    const brought = state.buildings.some((b) => b.defId === req.building)
-    return { available: false, reason: msg(brought ? 'sim.req.broken' : 'sim.req.notLaunched', { building: ref.building(req.building) }) }
-  }
-  if (req.spareParts && state.spareParts < req.spareParts) {
-    return { available: false, reason: msg('sim.req.noSpares') }
-  }
-  if (req.minStock && state.stocks[req.minStock.stock] < req.minStock.amount) {
-    return {
-      available: false,
-      reason: msg('sim.req.minStock', {
-        amount: req.minStock.amount,
-        stock: ref.stock(req.minStock.stock),
-        have: Math.floor(state.stocks[req.minStock.stock]),
-      }),
-    }
-  }
-  return { available: true }
+  const reason = option.requires ? unmetRequirement(state, option.requires) : null
+  return reason ? { available: false, reason } : { available: true }
 }
 
 function triggerEvent(content: GameContent, state: MissionState, eventId: string, day: number, variant?: string) {
@@ -131,17 +115,39 @@ export function rollEvents(content: GameContent, state: MissionState) {
   if (chosen) triggerEvent(content, state, chosen, nextDay)
 }
 
-/** @brief Applies the chosen option and resumes the mission. */
-export function resolveDecision(content: GameContent, state: MissionState, optionId: string): MissionState {
+export interface ResolveOptions {
+  /**
+   * The crew ran out of time (immersive view). The event's urgency effects
+   * apply first, then its fallback option, whatever `optionId` says.
+   */
+  timedOut?: boolean
+}
+
+/** @brief Applies the chosen option and resumes the mission (or asks the follow-up decision). */
+export function resolveDecision(content: GameContent, state: MissionState, optionId: string, opts: ResolveOptions = {}): MissionState {
   if (state.status !== 'awaiting-decision' || !state.pendingEvent) return state
   const def = eventDef(content, state.pendingEvent.eventId)
-  const option = def.options.find((o) => o.id === optionId)
+  const timedOut = !!opts.timedOut && !!def.urgency
+  const chosenId = timedOut ? def.urgency!.fallback : optionId
+  const option = def.options.find((o) => o.id === chosenId)
   if (!option || !optionAvailability(content, state, option).available) return state
 
   const s = structuredClone(state)
   const pending = s.pendingEvent!
-  const ctx = { pending, notes: [] as Message[] }
+  const ctx: EffectContext = { pending, notes: [] }
+  if (timedOut) {
+    ctx.notes.push(contentText(`events.${def.id}.urgency.note`))
+    applyEffects(content, s, def.urgency!.effects ?? [], ctx, `events.${def.id}.urgency.effects`)
+  }
   applyEffects(content, s, option.effects, ctx, `events.${def.id}.options.${option.id}.effects`)
+
+  const before = new Set(state.modifiers.map((m) => m.id))
+  const window = Math.max(1, ...s.modifiers.filter((m) => !before.has(m.id)).map((m) => m.remainingDays))
+  const change = (a: number, b: number) => Math.round((b - a) * 100) / 100
+  const effect: NonNullable<DecisionRecord['effect']> = {}
+  for (const k of ['oxygen', 'water', 'food', 'energy'] as const) if (change(state.stocks[k], s.stocks[k]) !== 0) effect[k] = change(state.stocks[k], s.stocks[k])
+  if (s.spareParts !== state.spareParts) effect.spares = s.spareParts - state.spareParts
+  if (change(state.crewDoseMsv, s.crewDoseMsv) !== 0) effect.dose = change(state.crewDoseMsv, s.crewDoseMsv)
 
   s.decisions.push({
     day: pending.day,
@@ -149,10 +155,29 @@ export function resolveDecision(content: GameContent, state: MissionState, optio
     optionId: option.id,
     risks: option.risks,
     notes: ctx.notes,
+    ...(timedOut ? { timedOut: true } : {}),
+    effect,
+    window,
   })
-  s.log.push({ day: s.day, kind: 'info', msg: msg('sim.decision', { icon: option.icon, option: ref.content(`events.${def.id}.options.${option.id}.label`) }) })
+  const label = ref.content(`events.${def.id}.options.${option.id}.label`)
+  s.log.push({
+    day: s.day,
+    kind: timedOut ? 'warning' : 'info',
+    msg: timedOut ? msg('sim.decisionTimeout', { icon: option.icon, option: label }) : msg('sim.decision', { icon: option.icon, option: label }),
+  })
   for (const note of ctx.notes) s.log.push({ day: s.day, kind: 'warning', msg: note })
   s.pendingEvent = null
   s.status = 'running'
+  if (ctx.followUp) triggerEvent(content, s, ctx.followUp, pending.day)
   return s
+}
+
+/**
+ * Seconds the crew gets to decide `eventId` in the immersive view, or null
+ * when the situation can wait. Higher ranks get less time.
+ */
+export function decisionTimeLimit(content: GameContent, eventId: string, rank: RankId): number | null {
+  const urgency = content.events[eventId]?.urgency
+  if (!urgency) return null
+  return Math.round(urgency.seconds * RANKS[rank].decisionTimeFactor)
 }
